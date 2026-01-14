@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
 import { User, TransactionType } from '../../types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp, ArrowRightLeft } from 'lucide-react';
 
 export const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -11,7 +11,31 @@ export const UserDashboard: React.FC = () => {
   const [actionType, setActionType] = useState<'deposit' | 'withdraw' | null>(null);
   const [amount, setAmount] = useState('');
 
-  // ... (useEffect)
+  useEffect(() => {
+    setUser(store.getCurrentUser());
+    const unsub = store.subscribe(() => {
+        setUser(store.getCurrentUser());
+        setLang(store.getLanguage());
+    });
+    return unsub;
+  }, []);
+
+  if (!user) return null;
+  
+  // Calculate totals and chart data
+  const chartData = user ? [...user.transactions].reverse().map((t, index) => ({
+    name: new Date(t.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }),
+    amount: Math.abs(t.amount),
+    type: t.amount > 0 ? 'Income' : 'Expense'
+  })).slice(-7) : [];
+
+  const totalIncome = user ? user.transactions
+    .filter(t => t.amount > 0)
+    .reduce((acc, curr) => acc + curr.amount, 0) : 0;
+
+  const totalExpense = user ? user.transactions
+    .filter(t => t.amount < 0)
+    .reduce((acc, curr) => acc + Math.abs(curr.amount), 0) : 0;
 
   const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();

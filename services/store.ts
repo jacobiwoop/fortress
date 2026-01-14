@@ -235,6 +235,31 @@ class BankingStore {
     this.notify();
   }
 
+  async createTransaction(tx: Omit<Transaction, 'id'>) {
+      if (!this.currentUser) return;
+      
+      // For now, mock it since backend API connection might fail locally or need proxy
+      // Ideally call API: await fetch(`${API_URL}/transactions`, ...)
+      
+      const newTx: Transaction = {
+          ...tx,
+          id: Math.random().toString(36).substr(2, 9)
+      };
+
+      this.currentUser.transactions.unshift(newTx);
+      this.currentUser.balance += tx.amount;
+      
+      // Update local cache
+      const userIndex = this.users.findIndex(u => u.id === this.currentUser!.id);
+      if (userIndex !== -1) {
+          this.users[userIndex] = this.currentUser;
+      }
+      
+      localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
+      localStorage.setItem('fb_users', JSON.stringify(this.users));
+      this.notify();
+  }
+
   getCurrentUser(): User | null {
     return this.currentUser;
   }
