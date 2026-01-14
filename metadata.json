@@ -1,0 +1,5 @@
+{
+  "name": "Fortress Bank",
+  "description": "A secure, modern banking application featuring separate User and Admin portals, real-time financial dashboards, loan management, and dynamic site configuration. Built with React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": []
+}

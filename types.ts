@@ -1,0 +1,88 @@
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
+export type Language = 'en' | 'fr' | 'pt' | 'de';
+
+export enum AccountStatus {
+  ACTIVE = 'ACTIVE',
+  BLOCKED = 'BLOCKED',
+  SUSPENDED = 'SUSPENDED',
+}
+
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAWAL = 'WITHDRAWAL',
+  TRANSFER_IN = 'TRANSFER_IN',
+  TRANSFER_OUT = 'TRANSFER_OUT',
+  PAYMENT = 'PAYMENT',
+}
+
+export enum LoanStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: TransactionType;
+  date: string;
+  description: string;
+  counterparty?: string; // For transfers
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  type: 'info' | 'success' | 'warning' | 'error';
+}
+
+export interface Loan {
+  id: string;
+  userId: string;
+  userName: string; // Denormalized for easier admin view
+  amount: number;
+  purpose: string;
+  status: LoanStatus;
+  requestDate: string;
+  adminReason?: string; // Reason for rejection or note for approval
+}
+
+export interface Beneficiary {
+  id: string;
+  name: string;
+  accountNumber: string;
+  bankName: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  password: string; // In a real app, this would be hashed
+  name: string;
+  role: UserRole;
+  balance: number;
+  status: AccountStatus;
+  iban: string;
+  cardNumber?: string;
+  cvv?: string;
+  transactions: Transaction[];
+  notifications: Notification[];
+  beneficiaries: Beneficiary[];
+  dateOfBirth?: string;
+  address?: string;
+}
+
+export interface SiteConfig {
+  name: string;
+  logoText: string;
+  logoUrl: string | null;
+}
