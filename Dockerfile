@@ -1,31 +1,44 @@
-# Stage 1: Build the application
+# Stage 1: Build the frontend
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json only (ignoring lock file to force fresh install for Alpine/musl compatibility)
+# Copy package.json only (ignoring lock file for Alpine compatibility in build)
 COPY package.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the source code
+# Copy source code
 COPY . .
 
-# Build the application
+# Build Vite app
 RUN npm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# Stage 2: Run the Server (Monolith)
+FROM node:18-alpine
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy server package dependencies if separate, or use root
+# Here we assume root package.json has server deps or we install them globally/locally
+# Better: Copy valid package.json for server or just run from root if unified.
 
-# Expose port 80
-EXPOSE 80
+# Create app directory
+WORKDIR /app
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy dependencies from builder (cached)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+
+# Copy built frontend
+COPY --from=builder /app/dist ./dist
+
+# Copy server code
+COPY --from=builder /app/server ./server
+
+# Expose port (Render sets PORT env, default to 3001)
+EXPOSE 3001
+
+# Start the server
+CMD ["node", "server/index.js"]

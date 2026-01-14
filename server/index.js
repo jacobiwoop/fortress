@@ -27,7 +27,11 @@ const upload = multer({ storage: storage });
 
 const app = express();
 app.use("/uploads", express.static(uploadDir));
-const PORT = 3001;
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "../dist")));
+
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -359,6 +363,11 @@ app.post("/api/upload", upload.single("logo"), (req, res) => {
   }
   const fileUrl = `/uploads/${req.file.filename}`;
   res.json({ url: fileUrl });
+});
+
+// SPA Fallback: Serve index.html for any unknown routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../dist", "index.html"));
 });
 
 app.listen(PORT, () => {
