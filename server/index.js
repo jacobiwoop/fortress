@@ -286,10 +286,10 @@ app.post("/api/transactions", (req, res) => {
       userId,
       amount,
       type,
-      txStatus,
-      date,
+      date, // ✅ date before status
       description,
       counterparty,
+      txStatus, // ✅ status after counterparty
       null, // adminReason - initially null
       function (err) {
         if (err) {
@@ -446,6 +446,31 @@ app.post("/api/notifications", (req, res) => {
     res.status(201).json({ id });
   });
   stmt.finalize();
+});
+
+// Get User Notifications
+app.get("/api/notifications/:userId", (req, res) => {
+  db.all(
+    "SELECT * FROM notifications WHERE userId = ? ORDER BY date DESC",
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const notifications = rows.map((n) => ({ ...n, read: !!n.read }));
+      res.json(notifications);
+    }
+  );
+});
+
+// Mark notification as read
+app.patch("/api/notifications/:id/read", (req, res) => {
+  db.run(
+    "UPDATE notifications SET read = 1 WHERE id = ?",
+    [req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
 });
 
 // --- SETTINGS ---

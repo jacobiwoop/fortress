@@ -11,10 +11,12 @@ import { Loans } from './views/user/Loans';
 import { Services } from './views/user/Services'; // Import Services
 import { Profile } from './views/user/Profile'; // Import Profile
 import { TransactionHistory } from './views/user/TransactionHistory'; // Import TransactionHistory
+import { Notifications } from './views/user/Notifications'; // Import Notifications
 import { AdminDashboard } from './views/admin/AdminDashboard';
 import { UserManagement } from './views/admin/UserManagement';
 import { LoanApprovals } from './views/admin/LoanApprovals';
 import { TransactionApprovals } from './views/admin/TransactionApprovals'; // Import
+import { SendNotifications } from './views/admin/SendNotifications'; // Import SendNotifications
 import { SiteSettings } from './views/admin/SiteSettings';
 
 function App() {
@@ -33,6 +35,7 @@ function App() {
           <Route path="/loans" element={<Loans />} />
           <Route path="/services" element={<Services />} />
           <Route path="/history" element={<TransactionHistory />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
 
           {/* Admin Routes */}
@@ -40,6 +43,7 @@ function App() {
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/loans" element={<LoanApprovals />} />
           <Route path="/admin/transactions" element={<TransactionApprovals />} />
+          <Route path="/admin/notifications" element={<SendNotifications />} />
           <Route path="/admin/settings" element={<SiteSettings />} />
         </Route>
       </Routes>

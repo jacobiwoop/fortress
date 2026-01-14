@@ -51,7 +51,7 @@ export interface Notification {
   message: string;
   date: string;
   read: boolean;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'alert';
 }
 
 export interface Loan {

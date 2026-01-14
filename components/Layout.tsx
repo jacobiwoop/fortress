@@ -17,6 +17,7 @@ import {
   Languages,
   History
 } from 'lucide-react';
+import { AlertModal } from './AlertModal';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -25,13 +26,21 @@ export const Layout: React.FC = () => {
   const [config, setConfig] = useState(store.getConfig());
   const [currentLang, setCurrentLang] = useState(store.getLanguage());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [alertNotifications, setAlertNotifications] = useState(store.getCurrentUser()?.notifications.filter(n => n.type === 'alert' && !n.read) || []);
 
   useEffect(() => {
     // Subscribe to store updates
     const unsubscribe = store.subscribe(() => {
-      setCurrentUser(store.getCurrentUser());
+      const user = store.getCurrentUser();
+      setCurrentUser(user);
       setConfig(store.getConfig());
       setCurrentLang(store.getLanguage());
+      
+      // Update alert notifications
+      if (user) {
+        const alerts = user.notifications.filter(n => n.type === 'alert' && !n.read);
+        setAlertNotifications(alerts);
+      }
     });
     
     if (!currentUser) {
@@ -57,8 +66,8 @@ export const Layout: React.FC = () => {
   const userLinks = [
     { name: store.t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: store.t('nav.transfers'), path: '/transfers', icon: <ArrowRightLeft size={20} /> },
-    { name: store.t('nav.services'), path: '/services', icon: <ShieldCheck size={20} /> }, // New
-    { name: 'History', path: '/history', icon: <History size={20} /> }, // New
+    { name: store.t('nav.services'), path: '/services', icon: <ShieldCheck size={20} /> },
+    { name: 'History', path: '/history', icon: <History size={20} /> },
     { name: store.t('nav.cards'), path: '/cards', icon: <CreditCard size={20} /> },
     { name: store.t('nav.loans'), path: '/loans', icon: <HandCoins size={20} /> },
   ];
@@ -67,11 +76,18 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.overview'), path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: store.t('nav.users'), path: '/admin/users', icon: <Users size={20} /> },
     { name: store.t('nav.requests'), path: '/admin/loans', icon: <ShieldCheck size={20} /> },
-    { name: 'Tx Approvals', path: '/admin/transactions', icon: <ArrowRightLeft size={20} /> }, // New
+    { name: 'Tx Approvals', path: '/admin/transactions', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: store.t('nav.settings'), path: '/admin/settings', icon: <Settings size={20} /> },
   ];
 
   const links = isAdmin ? adminLinks : userLinks;
+
+  const unreadCount = currentUser?.notifications.filter(n => !n.read).length || 0;
+
+  const handleAlertClose = async (notificationId: string) => {
+    await store.markNotificationAsRead(notificationId);
+  };
 
   return (
     <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans">
@@ -146,44 +162,83 @@ export const Layout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative pb-16 lg:pb-0">
-        {/* Header */}
-        <header className="h-16 bg-zinc-950/50 backdrop-blur-md border-b border-zinc-800 flex items-center justify-between px-4 sm:px-8">
-            <div className="flex items-center gap-4">
-               {/* Mobile Logo Only (No menu button, use Bottom Nav) */}
-               <div className="lg:hidden flex items-center gap-2">
-                   {config.logoUrl ? <img src={config.logoUrl} className="h-8" /> : <ShieldCheck className="text-brand-yellow" />}
-                   <span className="font-bold text-white">{config.name}</span>
-               </div>
-               
-               <h1 className="hidden lg:block text-xl font-semibold text-white">
-                    {location.pathname === '/profile' 
-                        ? store.t('profile.title') 
-                        : (links.find(l => l.path === location.pathname)?.name || 'Fortress Bank')}
-                </h1>
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Toggle */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            
+            <h1 className="text-xl font-bold text-white hidden md:block">
+              {config.name}
+            </h1>
+          </div>
 
-            <div className="flex items-center gap-4">
-                <div className="relative">
-                    <Bell size={20} className="text-zinc-400 hover:text-white cursor-pointer" />
-                    {currentUser.notifications.some(n => !n.read) && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
-                    )}
-                </div>
-                 <button className="lg:hidden text-zinc-400" onClick={handleLogout}>
-                    <LogOut size={20} />
-                </button>
+          <div className="flex items-center gap-4">
+            {/* Notification Bell (User only) */}
+            {!isAdmin && (
+              <button
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                title="Notifications"
+              >
+                <Bell size={20} className="text-zinc-400" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Language Selector */}
+            <select
+              value={currentLang}
+              onChange={handleLangChange}
+              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-yellow"
+            >
+              <option value="en">🇬🇧 EN</option>
+              <option value="fr">🇫🇷 FR</option>
+              <option value="pt">🇵🇹 PT</option>
+              <option value="de">🇩🇪 DE</option>
+            </select>
+
+            {/* User Info */}
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-white">{currentUser.name}</p>
+                <p className="text-xs text-zinc-500">{isAdmin ? 'Administrator' : 'User'}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                title={store.t('nav.logout')}
+              >
+                <LogOut size={20} />
+              </button>
             </div>
+          </div>
         </header>
 
-        {/* Scrollable Area */}
-        <div className="flex-1 overflow-auto p-4 sm:p-8">
-          <div className="max-w-6xl mx-auto space-y-6">
-            <Outlet />
-          </div>
-        </div>
-      </main>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Alert Modal */}
+      {alertNotifications.length > 0 && (
+        <AlertModal 
+          notifications={alertNotifications}
+          onClose={handleAlertClose}
+        />
+      )}
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 lg:hidden z-50 pb-safe">

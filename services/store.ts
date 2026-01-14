@@ -415,6 +415,39 @@ class BankingStore {
       }
   }
 
+  // --- NOTIFICATIONS ---
+  
+  async sendNotification(userId: string, title: string, message: string, type: Notification['type']): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/notifications`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, title, message, type })
+          });
+          if (res.ok) {
+              await this.fetchUsers(); // Refresh to get updated notifications
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+      try {
+          const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+              method: 'PATCH'
+          });
+          if (res.ok) {
+              await this.reloadCurrentUser();
+          }
+      } catch (e) {
+          console.error(e);
+      }
+  }
+
   async uploadLogo(file: File): Promise<string> {
       const formData = new FormData();
       formData.append('logo', file);
