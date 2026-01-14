@@ -32,11 +32,12 @@ const MOCK_USERS: User[] = [
       { id: 'n1', userId: 'u1', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
     ],
     transactions: [
-      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
-      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
-      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
-      { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
-      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, status: TransactionStatus.COMPLETED, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
+      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
+      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, status: TransactionStatus.COMPLETED, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
+       { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, status: TransactionStatus.COMPLETED, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
+      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't6', userId: 'u1', amount: -200, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING, date: new Date().toISOString(), description: 'ATM Withdrawal' }
     ]
   },
   {
