@@ -41,6 +41,7 @@ export interface Transaction {
   date: string;
   description: string;
   counterparty?: string; // For transfers
+  adminReason?: string; // Admin reason for approval/rejection
 }
 
 export interface Notification {

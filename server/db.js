@@ -31,11 +31,22 @@ db.serialize(() => {
         userId TEXT,
         amount REAL,
         type TEXT,
+        status TEXT,
         date TEXT,
         description TEXT,
         counterparty TEXT,
         FOREIGN KEY(userId) REFERENCES users(id)
     )`);
+
+  // Migration: Add status column if it doesn't exist
+  db.run("ALTER TABLE transactions ADD COLUMN status TEXT", (err) => {
+    // Ignore error if column already exists (sqlite doesn't support IF NOT EXISTS for columns easily)
+  });
+
+  // Migration: Add adminReason column if it doesn't exist
+  db.run("ALTER TABLE transactions ADD COLUMN adminReason TEXT", (err) => {
+    // Ignore error if column already exists
+  });
 
   // Notifications table
   db.run(`CREATE TABLE IF NOT EXISTS notifications (
@@ -111,6 +122,37 @@ db.serialize(() => {
       );
       stmt.finalize();
       console.log("Seeded Admin user.");
+    }
+  });
+
+  // Seed Default User (Jean Dupont) if not exists
+  db.get("SELECT id FROM users WHERE id = 'u1'", [], (err, row) => {
+    if (!row) {
+      const stmt = db.prepare(
+        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      );
+      stmt.run(
+        "u1",
+        "Jean Dupont",
+        "user@bank.com",
+        "password",
+        "USER",
+        12500.5,
+        "ACTIVE",
+        "FR76 3000 4000 5000 6000 7000 12",
+        "4242 4242 4242 4242",
+        "123"
+      );
+      stmt.finalize();
+
+      // Seed some initial transactions for Jean
+      const date = new Date().toISOString();
+      db.run(
+        "INSERT INTO transactions (id, userId, amount, type, status, date, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ["t_init_1", "u1", 2500, "DEPOSIT", "COMPLETED", date, "Solde Initial"]
+      );
+
+      console.log("Seeded User (Jean Dupont).");
     }
   });
 });

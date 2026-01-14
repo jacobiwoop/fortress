@@ -125,19 +125,78 @@ app.post("/api/login", (req, res) => {
   );
 });
 
-// Get All Users (Admin)
-// Note: For now we return basic user info + empty arrays to prevent frontend crashes
-// Ideally we would fetch full info or frontend should handle missing arrays
-app.get("/api/users", (req, res) => {
-  db.all("SELECT * FROM users", [], (err, rows) => {
+// Register
+app.post("/api/register", (req, res) => {
+  const { name, email, password, dateOfBirth, address } = req.body;
+
+  // Check if email already exists
+  db.get("SELECT id FROM users WHERE email = ?", [email], (err, existing) => {
     if (err) return res.status(500).json({ error: err.message });
-    const safeRows = rows.map((u) => ({
-      ...u,
-      transactions: [],
-      notifications: [],
-      beneficiaries: [],
-    }));
-    res.json(safeRows);
+    if (existing)
+      return res.status(400).json({ error: "Email already exists" });
+
+    const id = generateId();
+    const role = "USER";
+    const balance = 0;
+    const status = "ACTIVE";
+    const iban =
+      "FR76 " +
+      Math.floor(Math.random() * 1e12)
+        .toString()
+        .padStart(12, "0") +
+      " " +
+      Math.floor(Math.random() * 1e12)
+        .toString()
+        .padStart(12, "0");
+    const cardNumber = generateCardNumber();
+    const cvv = generateCVV();
+
+    const stmt = db.prepare(
+      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    stmt.run(
+      id,
+      name,
+      email,
+      password,
+      role,
+      balance,
+      status,
+      iban,
+      cardNumber,
+      cvv,
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // Fetch the newly created user with all related data
+        fetchFullUser(id, (err, fullUser) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.status(201).json(fullUser);
+        });
+      }
+    );
+    stmt.finalize();
+  });
+});
+
+// Get All Users (Admin)
+app.get("/api/users", (req, res) => {
+  db.all("SELECT * FROM users", [], (err, users) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // Fetch all transactions to attach
+    db.all("SELECT * FROM transactions ORDER BY date DESC", [], (err, txs) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const usersWithTxs = users.map((u) => ({
+        ...u,
+        transactions: txs.filter((t) => t.userId === u.id),
+        notifications: [], // Could fetch these too if needed
+        beneficiaries: [],
+      }));
+
+      res.json(usersWithTxs);
+    });
   });
 });
 
@@ -196,14 +255,17 @@ app.post("/api/users", (req, res) => {
 
 // Create Transaction (Transfer, Payment, etc.)
 app.post("/api/transactions", (req, res) => {
-  const { userId, amount, type, description, counterparty } = req.body;
+  const { userId, amount, type, status, description, counterparty } = req.body;
   const id = generateId();
   const date = new Date().toISOString();
+  // All transactions start as PENDING and require admin approval
+  const txStatus = "PENDING";
 
   db.serialize(() => {
     db.run("BEGIN TRANSACTION");
 
-    // Update Balance
+    // Update Balance - ONLY if status is COMPLETED or PENDING (Funds are reserved/deducted in both cases for this logic)
+    // If pending, we deduct. If rejected later, we refund.
     db.run(
       "UPDATE users SET balance = balance + ? WHERE id = ?",
       [amount, userId],
@@ -217,28 +279,78 @@ app.post("/api/transactions", (req, res) => {
 
     // Insert Transaction
     const stmt = db.prepare(
-      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     stmt.run(
       id,
       userId,
       amount,
       type,
+      txStatus,
       date,
       description,
       counterparty,
+      null, // adminReason - initially null
       function (err) {
         if (err) {
           db.run("ROLLBACK");
           return res.status(500).json({ error: err.message });
         }
         db.run("COMMIT");
-        res
-          .status(201)
-          .json({ id, userId, amount, type, date, description, counterparty });
+        res.status(201).json({
+          id,
+          userId,
+          amount,
+          type,
+          status: txStatus,
+          date,
+          description,
+          counterparty,
+        });
       }
     );
     stmt.finalize();
+  });
+});
+
+// Update Transaction (Approve/Reject)
+app.patch("/api/transactions/:id", (req, res) => {
+  const { status, adminReason } = req.body; // COMPLETED | REJECTED, and optional reason
+  const { id } = req.params;
+
+  db.get("SELECT * FROM transactions WHERE id = ?", [id], (err, tx) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+
+    if (status === "REJECTED" && tx.status === "PENDING") {
+      // Refund logic
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        // Subtract amount (which is negative for withdrawals/transfers, so this adds it back)
+        db.run("UPDATE users SET balance = balance - ? WHERE id = ?", [
+          tx.amount,
+          tx.userId,
+        ]);
+        db.run(
+          "UPDATE transactions SET status = ?, adminReason = ? WHERE id = ?",
+          [status, adminReason || null, id]
+        );
+        db.run("COMMIT", (err) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, refunded: true });
+        });
+      });
+    } else {
+      // Just update status (e.g. PENDING -> COMPLETED)
+      db.run(
+        "UPDATE transactions SET status = ?, adminReason = ? WHERE id = ?",
+        [status, adminReason || null, id],
+        (err) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true });
+        }
+      );
+    }
   });
 });
 

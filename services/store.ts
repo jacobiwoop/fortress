@@ -97,16 +97,26 @@ class BankingStore {
   private listeners: (() => void)[] = [];
 
   constructor() {
+    // Restore language preference
     const storedLang = localStorage.getItem('fb_lang');
     if (storedLang && ['en', 'fr', 'pt', 'de'].includes(storedLang)) {
         this.currentLanguage = storedLang as Language;
     }
     
-    // Restore session
+    // Restore session (user authentication state only)
     const savedSession = localStorage.getItem('fb_session');
     if (savedSession) {
         try {
-            this.currentUser = JSON.parse(savedSession);
+            const sessionUser = JSON.parse(savedSession);
+            this.currentUser = sessionUser;
+            
+            // If Admin, immediately fetch fresh data from DB
+            if (sessionUser.role === UserRole.ADMIN) {
+                this.fetchUsers();
+            } else {
+                // For regular user, reload from DB
+                this.reloadCurrentUser();
+            }
         } catch (e) {
             localStorage.removeItem('fb_session');
         }
@@ -190,44 +200,28 @@ class BankingStore {
     }
   }
 
-  register(name: string, email: string, password: string, dob: string, address: string): User {
-    const existing = this.users.find(u => u.email === email);
-    if (existing) {
-        throw new Error(this.t('auth.error_exists') || 'Email already exists');
+  async register(name: string, email: string, password: string, dob: string, address: string): Promise<User> {
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, dateOfBirth: dob, address })
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || this.t('auth.error_exists'));
+        }
+        
+        const newUser = await res.json();
+        this.currentUser = newUser; // Auto login
+        
+        localStorage.setItem('fb_session', JSON.stringify(newUser));
+        this.notify();
+        return newUser;
+    } catch (e: any) {
+        throw new Error(e.message || 'Registration failed');
     }
-
-    const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        password, // Mock: Plain text
-        role: UserRole.USER,
-        balance: 0,
-        status: AccountStatus.ACTIVE,
-        iban: 'FR76 ' + Math.random().toString().slice(2, 12) + ' ' + Math.random().toString().slice(2, 12),
-        transactions: [],
-        notifications: [
-            { id: Math.random().toString(36), userId: '', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
-        ],
-        beneficiaries: [],
-        dateOfBirth: dob,
-        address: address,
-        cardNumber: '4242 4242 4242 ' + Math.floor(1000 + Math.random() * 9000),
-        cvv: Math.floor(100 + Math.random() * 900).toString()
-    };
-    
-    // Fix notification ID
-    newUser.notifications[0].userId = newUser.id;
-
-    this.users.push(newUser);
-    this.currentUser = newUser; // Auto login
-    
-    localStorage.setItem('fb_session', JSON.stringify(newUser));
-    // Save to local storage (Mock persistence for new users)
-    localStorage.setItem('fb_users', JSON.stringify(this.users));
-    
-    this.notify();
-    return newUser;
   }
 
   logout() {
@@ -240,35 +234,38 @@ class BankingStore {
   async createTransaction(tx: Omit<Transaction, 'id' | 'status'>) {
       if (!this.currentUser) return;
       
-      // Determine status: Transfers and Withdrawals are PENDING by default
-      const needsApproval = tx.type === TransactionType.TRANSFER || tx.type === TransactionType.WITHDRAWAL;
-      const initialStatus = needsApproval ? TransactionStatus.PENDING : TransactionStatus.COMPLETED;
-
-      // Note: We deduct balance immediately even if pending, to reserve funds.
-      // If rejected, we will refund.
+      // Backend now forces all transactions to PENDING status
+      // No need to determine status here
       
-      const newTx: Transaction = {
-          ...tx,
-          id: Math.random().toString(36).substr(2, 9),
-          status: initialStatus
-      };
+      try {
+          const res = await fetch(`${API_URL}/transactions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tx)
+          });
 
-      this.currentUser.transactions.unshift(newTx);
-      this.currentUser.balance += tx.amount;
-      
-      // Update local cache
-      const userIndex = this.users.findIndex(u => u.id === this.currentUser!.id);
-      if (userIndex !== -1) {
-          this.users[userIndex] = this.currentUser;
+          if (!res.ok) throw new Error("Transaction failed");
+
+          const newTx = await res.json();
+
+          // Update local state immediately for responsiveness
+          this.currentUser.transactions.unshift(newTx);
+          // Backend deducted balance automatically
+          this.currentUser.balance += tx.amount;
+          
+          this.notify();
+          await this.reloadCurrentUser(); // Sync fully with DB
+      } catch (e) {
+          console.error(e);
+          throw e; // Re-throw to UI
       }
-      
-      localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
-      localStorage.setItem('fb_users', JSON.stringify(this.users));
-      this.notify();
   }
 
   // Admin Methods for Transactions
   getPendingTransactions(): { tx: Transaction, user: User }[] {
+      // Since we don't have a specific "get all pending" endpoint yet, 
+      // we rely on the fact that Admin fetches ALL users and their txs in fetchUsers()
+      // In a real large app, this should be a dedicated endpoint /api/transactions?status=PENDING
       const pending: { tx: Transaction, user: User }[] = [];
       this.users.forEach(u => {
           u.transactions.forEach(t => {
@@ -280,47 +277,32 @@ class BankingStore {
       return pending.sort((a, b) => new Date(b.tx.date).getTime() - new Date(a.tx.date).getTime());
   }
 
-  approveTransaction(txId: string) {
-      let txFound = false;
-      this.users.forEach(u => {
-          const tx = u.transactions.find(t => t.id === txId);
-          if (tx && tx.status === TransactionStatus.PENDING) {
-              tx.status = TransactionStatus.COMPLETED;
-              txFound = true;
+  async approveTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.COMPLETED, adminReason: reason })
+          });
+          if (res.ok) {
+            // Refresh All Users (since this affects a specific user)
+            // If we are admin, we likely want to see the update
+            await this.fetchUsers();
           }
-      });
-      if (txFound) {
-          localStorage.setItem('fb_users', JSON.stringify(this.users));
-          // If current user is affected, update session
-          if (this.currentUser && this.users.find(u => u.id === this.currentUser?.id)) {
-               this.currentUser = this.users.find(u => u.id === this.currentUser?.id) || null;
-               localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
-          }
-          this.notify();
-      }
+      } catch (e) { console.error(e); }
   }
 
-  rejectTransaction(txId: string) {
-      let txFound = false;
-      this.users.forEach(u => {
-          const tx = u.transactions.find(t => t.id === txId);
-          if (tx && tx.status === TransactionStatus.PENDING) {
-              tx.status = TransactionStatus.REJECTED;
-              // Refund the amount (since validation logic usually deducts negative amount, we subtract it to add it back, or just -= amount which is negative... wait. 
-              // Amount for transfer/withdraw is negative. To refund, we subtract it? No, if amount is -100, we need to add 100. So we -= amount.
-              u.balance -= tx.amount; 
-              txFound = true;
+  async rejectTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.REJECTED, adminReason: reason })
+          });
+          if (res.ok) {
+            await this.fetchUsers();
           }
-      });
-      if (txFound) {
-          localStorage.setItem('fb_users', JSON.stringify(this.users));
-          // If current user is affected, update session
-          if (this.currentUser && this.users.find(u => u.id === this.currentUser?.id)) {
-               this.currentUser = this.users.find(u => u.id === this.currentUser?.id) || null;
-               localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
-          }
-          this.notify();
-      }
+      } catch (e) { console.error(e); }
   }
 
   getCurrentUser(): User | null {

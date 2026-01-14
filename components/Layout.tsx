@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Menu,
   X,
-  Languages
+  Languages,
+  History
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -57,6 +58,7 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: store.t('nav.transfers'), path: '/transfers', icon: <ArrowRightLeft size={20} /> },
     { name: store.t('nav.services'), path: '/services', icon: <ShieldCheck size={20} /> }, // New
+    { name: 'History', path: '/history', icon: <History size={20} /> }, // New
     { name: store.t('nav.cards'), path: '/cards', icon: <CreditCard size={20} /> },
     { name: store.t('nav.loans'), path: '/loans', icon: <HandCoins size={20} /> },
   ];

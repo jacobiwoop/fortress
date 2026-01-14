@@ -10,6 +10,7 @@ import { Cards } from './views/user/Cards';
 import { Loans } from './views/user/Loans';
 import { Services } from './views/user/Services'; // Import Services
 import { Profile } from './views/user/Profile'; // Import Profile
+import { TransactionHistory } from './views/user/TransactionHistory'; // Import TransactionHistory
 import { AdminDashboard } from './views/admin/AdminDashboard';
 import { UserManagement } from './views/admin/UserManagement';
 import { LoanApprovals } from './views/admin/LoanApprovals';
@@ -31,6 +32,7 @@ function App() {
           <Route path="/cards" element={<Cards />} />
           <Route path="/loans" element={<Loans />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/history" element={<TransactionHistory />} />
           <Route path="/profile" element={<Profile />} />
 
           {/* Admin Routes */}
