@@ -184,10 +184,7 @@ export const UserDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-white mb-4">{store.t('dash.recent')}</h3>
           <div className="flex-1 overflow-auto space-y-4">
             {user.transactions.length === 0 && <p className="text-zinc-500 text-sm">{store.t('dash.no_tx')}</p>}
-  import { User, TransactionType, TransactionStatus } from '../../types';
-  import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp, ArrowRightLeft, Clock, AlertCircle } from 'lucide-react';
-  
-  // ... inside render ...
+
             {user.transactions.slice(0, 5).map(t => (
               <div key={t.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors">
                 <div className="flex items-center gap-3">
