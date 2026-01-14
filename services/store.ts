@@ -8,7 +8,8 @@ import {
   LoanStatus, 
   SiteConfig,
   Notification,
-  Language
+  Language,
+  TransactionStatus
 } from '../types';
 import { translations } from './translations';
 
@@ -235,15 +236,20 @@ class BankingStore {
     this.notify();
   }
 
-  async createTransaction(tx: Omit<Transaction, 'id'>) {
+  async createTransaction(tx: Omit<Transaction, 'id' | 'status'>) {
       if (!this.currentUser) return;
       
-      // For now, mock it since backend API connection might fail locally or need proxy
-      // Ideally call API: await fetch(`${API_URL}/transactions`, ...)
+      // Determine status: Transfers and Withdrawals are PENDING by default
+      const needsApproval = tx.type === TransactionType.TRANSFER || tx.type === TransactionType.WITHDRAWAL;
+      const initialStatus = needsApproval ? TransactionStatus.PENDING : TransactionStatus.COMPLETED;
+
+      // Note: We deduct balance immediately even if pending, to reserve funds.
+      // If rejected, we will refund.
       
       const newTx: Transaction = {
           ...tx,
-          id: Math.random().toString(36).substr(2, 9)
+          id: Math.random().toString(36).substr(2, 9),
+          status: initialStatus
       };
 
       this.currentUser.transactions.unshift(newTx);
@@ -258,6 +264,62 @@ class BankingStore {
       localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
       localStorage.setItem('fb_users', JSON.stringify(this.users));
       this.notify();
+  }
+
+  // Admin Methods for Transactions
+  getPendingTransactions(): { tx: Transaction, user: User }[] {
+      const pending: { tx: Transaction, user: User }[] = [];
+      this.users.forEach(u => {
+          u.transactions.forEach(t => {
+              if (t.status === TransactionStatus.PENDING) {
+                  pending.push({ tx: t, user: u });
+              }
+          });
+      });
+      return pending.sort((a, b) => new Date(b.tx.date).getTime() - new Date(a.tx.date).getTime());
+  }
+
+  approveTransaction(txId: string) {
+      let txFound = false;
+      this.users.forEach(u => {
+          const tx = u.transactions.find(t => t.id === txId);
+          if (tx && tx.status === TransactionStatus.PENDING) {
+              tx.status = TransactionStatus.COMPLETED;
+              txFound = true;
+          }
+      });
+      if (txFound) {
+          localStorage.setItem('fb_users', JSON.stringify(this.users));
+          // If current user is affected, update session
+          if (this.currentUser && this.users.find(u => u.id === this.currentUser?.id)) {
+               this.currentUser = this.users.find(u => u.id === this.currentUser?.id) || null;
+               localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
+          }
+          this.notify();
+      }
+  }
+
+  rejectTransaction(txId: string) {
+      let txFound = false;
+      this.users.forEach(u => {
+          const tx = u.transactions.find(t => t.id === txId);
+          if (tx && tx.status === TransactionStatus.PENDING) {
+              tx.status = TransactionStatus.REJECTED;
+              // Refund the amount (since validation logic usually deducts negative amount, we subtract it to add it back, or just -= amount which is negative... wait. 
+              // Amount for transfer/withdraw is negative. To refund, we subtract it? No, if amount is -100, we need to add 100. So we -= amount.
+              u.balance -= tx.amount; 
+              txFound = true;
+          }
+      });
+      if (txFound) {
+          localStorage.setItem('fb_users', JSON.stringify(this.users));
+          // If current user is affected, update session
+          if (this.currentUser && this.users.find(u => u.id === this.currentUser?.id)) {
+               this.currentUser = this.users.find(u => u.id === this.currentUser?.id) || null;
+               localStorage.setItem('fb_session', JSON.stringify(this.currentUser));
+          }
+          this.notify();
+      }
   }
 
   getCurrentUser(): User | null {

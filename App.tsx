@@ -13,6 +13,7 @@ import { Profile } from './views/user/Profile'; // Import Profile
 import { AdminDashboard } from './views/admin/AdminDashboard';
 import { UserManagement } from './views/admin/UserManagement';
 import { LoanApprovals } from './views/admin/LoanApprovals';
+import { TransactionApprovals } from './views/admin/TransactionApprovals'; // Import
 import { SiteSettings } from './views/admin/SiteSettings';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/loans" element={<LoanApprovals />} />
+          <Route path="/admin/transactions" element={<TransactionApprovals />} />
           <Route path="/admin/settings" element={<SiteSettings />} />
         </Route>
       </Routes>

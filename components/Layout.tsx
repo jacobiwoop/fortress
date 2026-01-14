@@ -65,6 +65,7 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.overview'), path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: store.t('nav.users'), path: '/admin/users', icon: <Users size={20} /> },
     { name: store.t('nav.requests'), path: '/admin/loans', icon: <ShieldCheck size={20} /> },
+    { name: 'Tx Approvals', path: '/admin/transactions', icon: <ArrowRightLeft size={20} /> }, // New
     { name: store.t('nav.settings'), path: '/admin/settings', icon: <Settings size={20} /> },
   ];
 

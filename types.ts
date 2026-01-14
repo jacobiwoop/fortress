@@ -25,11 +25,18 @@ export enum LoanStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}
+
 export interface Transaction {
   id: string;
   userId: string;
   amount: number;
   type: TransactionType;
+  status: TransactionStatus;
   date: string;
   description: string;
   counterparty?: string; // For transfers

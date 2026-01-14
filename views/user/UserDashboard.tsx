@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
-import { User, TransactionType } from '../../types';
+import { User, TransactionType, TransactionStatus } from '../../types';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp, ArrowRightLeft } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp, ArrowRightLeft, Clock, AlertCircle } from 'lucide-react';
 
 export const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -184,15 +184,29 @@ export const UserDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-white mb-4">{store.t('dash.recent')}</h3>
           <div className="flex-1 overflow-auto space-y-4">
             {user.transactions.length === 0 && <p className="text-zinc-500 text-sm">{store.t('dash.no_tx')}</p>}
+  import { User, TransactionType, TransactionStatus } from '../../types';
+  import { ArrowUpRight, ArrowDownLeft, Wallet, TrendingUp, ArrowRightLeft, Clock, AlertCircle } from 'lucide-react';
+  
+  // ... inside render ...
             {user.transactions.slice(0, 5).map(t => (
               <div key={t.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${t.amount > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                    {t.amount > 0 ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      t.status === TransactionStatus.PENDING ? 'bg-yellow-900/30 text-yellow-500' :
+                      t.status === TransactionStatus.REJECTED ? 'bg-red-900/30 text-red-500' :
+                      t.amount > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-zinc-800 text-zinc-400'
+                  }`}>
+                    {t.status === TransactionStatus.PENDING ? <Clock size={18} /> : 
+                     t.status === TransactionStatus.REJECTED ? <AlertCircle size={18} /> :
+                     t.amount > 0 ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">{t.description}</p>
-                    <p className="text-xs text-zinc-500">{new Date(t.date).toLocaleDateString()}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs text-zinc-500">{new Date(t.date).toLocaleDateString()}</p>
+                        {t.status === TransactionStatus.PENDING && <span className="text-[10px] bg-yellow-900/30 text-yellow-500 px-1.5 rounded">Pending</span>}
+                        {t.status === TransactionStatus.REJECTED && <span className="text-[10px] bg-red-900/30 text-red-500 px-1.5 rounded">Rejected</span>}
+                    </div>
                   </div>
                 </div>
                 <span className={`font-medium text-sm ${t.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
