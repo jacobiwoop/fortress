@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   Languages,
-  History
+  History,
+  FileText
 } from 'lucide-react';
 import { AlertModal } from './AlertModal';
 
@@ -68,6 +69,7 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.transfers'), path: '/transfers', icon: <ArrowRightLeft size={20} /> },
     { name: store.t('nav.services'), path: '/services', icon: <ShieldCheck size={20} /> },
     { name: 'History', path: '/history', icon: <History size={20} /> },
+    { name: 'Documents', path: '/documents', icon: <FileText size={20} /> },
     { name: store.t('nav.cards'), path: '/cards', icon: <CreditCard size={20} /> },
     { name: store.t('nav.loans'), path: '/loans', icon: <HandCoins size={20} /> },
   ];
@@ -78,6 +80,7 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.requests'), path: '/admin/loans', icon: <ShieldCheck size={20} /> },
     { name: 'Tx Approvals', path: '/admin/transactions', icon: <ArrowRightLeft size={20} /> },
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
+    { name: 'Documents', path: '/admin/documents', icon: <FileText size={20} /> },
     { name: store.t('nav.settings'), path: '/admin/settings', icon: <Settings size={20} /> },
   ];
 

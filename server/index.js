@@ -473,6 +473,149 @@ app.patch("/api/notifications/:id/read", (req, res) => {
   );
 });
 
+// --- DOCUMENT REQUESTS ---
+
+// Create document request
+app.post("/api/document-requests", (req, res) => {
+  const { userId, documentType, description, requestedBy, notificationType } =
+    req.body;
+  const id = generateId();
+  const status = "PENDING";
+  const requestDate = new Date().toISOString();
+
+  db.run(
+    "INSERT INTO document_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [
+      id,
+      userId,
+      requestedBy,
+      documentType,
+      description,
+      status,
+      requestDate,
+      null,
+      null,
+      null,
+      null,
+      notificationType || "info",
+    ],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Send notification to user
+      const notifId = generateId();
+      const notifType = notificationType || "info";
+      db.run(
+        "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          notifId,
+          userId,
+          "Document Required",
+          `Please submit: ${documentType}. ${description}`,
+          requestDate,
+          0,
+          notifType,
+        ],
+        () => {
+          res.status(201).json({ id });
+        }
+      );
+    }
+  );
+});
+
+// Get all document requests (admin)
+app.get("/api/document-requests", (req, res) => {
+  db.all(
+    `SELECT dr.*, u.name as userName 
+     FROM document_requests dr 
+     JOIN users u ON dr.userId = u.id 
+     ORDER BY requestDate DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// Get document requests for a user
+app.get("/api/document-requests/user/:userId", (req, res) => {
+  db.all(
+    "SELECT * FROM document_requests WHERE userId = ? ORDER BY requestDate DESC",
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// Submit document (user uploads metadata)
+app.patch("/api/document-requests/:id/submit", (req, res) => {
+  const { fileName, fileSize } = req.body;
+  const submittedDate = new Date().toISOString();
+
+  db.run(
+    "UPDATE document_requests SET status = 'SUBMITTED', submittedDate = ?, fileName = ?, fileSize = ? WHERE id = ?",
+    [submittedDate, fileName, fileSize, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// Review document (approve/reject)
+app.patch("/api/document-requests/:id/review", (req, res) => {
+  const { status, adminReason } = req.body; // APPROVED | REJECTED
+
+  db.get(
+    "SELECT * FROM document_requests WHERE id = ?",
+    [req.params.id],
+    (err, docReq) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!docReq)
+        return res.status(404).json({ error: "Document request not found" });
+
+      db.run(
+        "UPDATE document_requests SET status = ?, adminReason = ? WHERE id = ?",
+        [status, adminReason || null, req.params.id],
+        (err) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Send notification to user about the decision
+          const notifId = generateId();
+          const title =
+            status === "APPROVED" ? "Document Approved" : "Document Rejected";
+          const message =
+            status === "APPROVED"
+              ? `Your ${docReq.documentType} has been approved.`
+              : `Your ${docReq.documentType} was rejected. Reason: ${
+                  adminReason || "No reason provided"
+                }`;
+
+          db.run(
+            "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+              notifId,
+              docReq.userId,
+              title,
+              message,
+              new Date().toISOString(),
+              0,
+              "info",
+            ],
+            () => {
+              res.json({ success: true });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
 // --- SETTINGS ---
 
 app.get("/api/settings", (req, res) => {

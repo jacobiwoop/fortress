@@ -67,9 +67,40 @@ export interface Loan {
 
 export interface Beneficiary {
   id: string;
+  userId: string;
   name: string;
   accountNumber: string;
   bankName: string;
+}
+
+export enum DocumentStatus {
+  PENDING = 'PENDING',
+  SUBMITTED = 'SUBMITTED',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export interface DocumentRequest {
+  id: string;
+  userId: string;
+  requestedBy: string;
+  documentType: string;
+  description: string;
+  status: DocumentStatus;
+  requestDate: string;
+  submittedDate?: string;
+  fileName?: string;
+  fileSize?: string;
+  adminReason?: string;
+  notificationType: 'alert' | 'info';
+  userName?: string; // For admin view
+}
+
+export interface SiteConfig {
+  id: number;
+  name: string;
+  logoText: string;
+  logoUrl: string | null;
 }
 
 export interface User {

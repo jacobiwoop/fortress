@@ -48,6 +48,24 @@ db.serialize(() => {
     // Ignore error if column already exists
   });
 
+  // Create document_requests table
+  db.run(`CREATE TABLE IF NOT EXISTS document_requests (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      requestedBy TEXT,
+      documentType TEXT,
+      description TEXT,
+      status TEXT,
+      requestDate TEXT,
+      submittedDate TEXT,
+      fileName TEXT,
+      fileSize TEXT,
+      adminReason TEXT,
+      notificationType TEXT,
+      FOREIGN KEY(userId) REFERENCES users(id),
+      FOREIGN KEY(requestedBy) REFERENCES users(id)
+  )`);
+
   // Notifications table
   db.run(`CREATE TABLE IF NOT EXISTS notifications (
         id TEXT PRIMARY KEY,

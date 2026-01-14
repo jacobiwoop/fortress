@@ -448,6 +448,70 @@ class BankingStore {
       }
   }
 
+  // --- DOCUMENT REQUESTS ---
+  
+  async createDocumentRequest(userId: string, documentType: string, description: string, notificationType: 'alert' | 'info'): Promise<boolean> {
+      try {
+          const requestedBy = this.currentUser?.id;
+          const res = await fetch(`${API_URL}/document-requests`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, documentType, description, requestedBy, notificationType })
+          });
+          if (res.ok) {
+              await this.fetchUsers();
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async getDocumentRequests(userId?: string): Promise<any[]> {
+      try {
+          const url = userId ? `${API_URL}/document-requests/user/${userId}` : `${API_URL}/document-requests`;
+          const res = await fetch(url);
+          return res.ok ? await res.json() : [];
+      } catch (e) {
+          console.error(e);
+          return [];
+      }
+  }
+
+  async submitDocument(requestId: string, fileName: string, fileSize: string): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/document-requests/${requestId}/submit`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fileName, fileSize })
+          });
+          if (res.ok) {
+              await this.reloadCurrentUser();
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async reviewDocument(requestId: string, status: 'APPROVED' | 'REJECTED', adminReason?: string): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/document-requests/${requestId}/review`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status, adminReason })
+          });
+          return res.ok;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
   async uploadLogo(file: File): Promise<string> {
       const formData = new FormData();
       formData.append('logo', file);
