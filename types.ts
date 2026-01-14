@@ -14,6 +14,7 @@ export enum AccountStatus {
 export enum TransactionType {
   DEPOSIT = 'DEPOSIT',
   WITHDRAWAL = 'WITHDRAWAL',
+  TRANSFER = 'TRANSFER',
   TRANSFER_IN = 'TRANSFER_IN',
   TRANSFER_OUT = 'TRANSFER_OUT',
   PAYMENT = 'PAYMENT',
@@ -25,14 +26,22 @@ export enum LoanStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}
+
 export interface Transaction {
   id: string;
   userId: string;
   amount: number;
   type: TransactionType;
+  status: TransactionStatus;
   date: string;
   description: string;
   counterparty?: string; // For transfers
+  adminReason?: string; // Admin reason for approval/rejection
 }
 
 export interface Notification {
@@ -42,7 +51,7 @@ export interface Notification {
   message: string;
   date: string;
   read: boolean;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'alert';
 }
 
 export interface Loan {

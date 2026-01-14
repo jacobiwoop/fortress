@@ -22,7 +22,7 @@ export const Register: React.FC = () => {
     });
   }, []);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError(store.t('auth.pass_match'));
@@ -30,7 +30,7 @@ export const Register: React.FC = () => {
     }
 
     try {
-      store.register(name, email, password, dateOfBirth, address);
+      await store.register(name, email, password, dateOfBirth, address);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);

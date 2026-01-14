@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
-import { User, Beneficiary } from '../../types';
-import { Send, Plus, Trash2 } from 'lucide-react';
+import { User, TransactionType } from '../../types';
+import { Send, Plus, Trash2, ArrowRight, CheckCircle, ShieldAlert, ChevronLeft, User as UserIcon } from 'lucide-react';
 
 export const Transfers: React.FC = () => {
   const [user, setUser] = useState<User | null>(store.getCurrentUser());
-  const [activeTab, setActiveTab] = useState<'new' | 'beneficiaries'>('new');
   const [lang, setLang] = useState(store.getLanguage());
   
-  // Transfer State
+  // Wizard State
+  const [step, setStep] = useState(1);
+  const totalSteps = 4;
+
+  // Form Data
+  const [recipientName, setRecipientName] = useState('');
+  const [contactInfo, setContactInfo] = useState(''); // Email or Phone
+  const [addToContacts, setAddToContacts] = useState(false);
+  
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedBen, setSelectedBen] = useState('');
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  // Beneficiary State
-  const [newBenName, setNewBenName] = useState('');
-  const [newBenIban, setNewBenIban] = useState('');
-  const [newBenBank, setNewBenBank] = useState('');
+  
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [confirmAnswer, setConfirmAnswer] = useState('');
+  
+  const [msg, setMsg] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
     return store.subscribe(() => {
@@ -28,171 +34,270 @@ export const Transfers: React.FC = () => {
 
   if (!user) return null;
 
-  const handleTransfer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !selectedBen) return;
-    
+  const nextStep = () => {
+      setMsg(null);
+      if (step === 1) {
+          if (!recipientName || !contactInfo) {
+              setMsg({type: 'error', text: 'Please fill in all fields.'});
+              return;
+          }
+      }
+      if (step === 2) {
+          if (!amount || parseFloat(amount) <= 0) {
+              setMsg({type: 'error', text: 'Invalid amount.'});
+              return;
+          }
+          if (parseFloat(amount) > user.balance) {
+              setMsg({type: 'error', text: 'Insufficient funds.'});
+              return;
+          }
+      }
+      if (step === 3) {
+          if (!securityQuestion || !securityAnswer || !confirmAnswer) {
+               setMsg({type: 'error', text: 'All security fields are required.'});
+               return;
+          }
+          if (securityAnswer !== confirmAnswer) {
+              setMsg({type: 'error', text: 'Answers do not match.'});
+              return;
+          }
+      }
+      setStep(step + 1);
+  };
+
+  const prevStep = () => setStep(step - 1);
+
+  const handleTransfer = async () => {
     try {
-      const benName = user.beneficiaries.find(b => b.id === selectedBen)?.name || 'Unknown';
-      await store.createTransfer(user.id, parseFloat(amount), description || 'Transfer', benName);
-      setMessage({ type: 'success', text: store.t('transfer.success') });
-      setAmount('');
-      setDescription('');
-      // Update local state is handled by subscription, but we might want to ensure fetch
+      await store.createTransaction({
+          userId: user.id,
+          amount: -parseFloat(amount),
+          type: TransactionType.TRANSFER,
+          description: `Interac: ${recipientName} (${description})`,
+          counterparty: recipientName,
+          date: new Date().toISOString()
+      });
+      
+      // If add to contacts was checked
+      if (addToContacts) {
+          await store.addBeneficiary(user.id, {
+              name: recipientName,
+              accountNumber: contactInfo,
+              bankName: 'Interac Contact'
+          });
+      }
+
+      setMsg({ type: 'success', text: store.t('transfer.success') });
+      setTimeout(() => {
+          // Reset form
+          setStep(1);
+          setRecipientName('');
+          setContactInfo('');
+          setAmount('');
+          setDescription('');
+          setSecurityQuestion('');
+          setSecurityAnswer('');
+          setConfirmAnswer('');
+          setMsg(null);
+      }, 3000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: err.message });
     }
   };
 
-  const handleAddBeneficiary = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if(!newBenName || !newBenIban) return;
-
-      await store.addBeneficiary(user.id, {
-          name: newBenName,
-          accountNumber: newBenIban,
-          bankName: newBenBank || 'External Bank'
-      });
-      // Subscription should update user
-      setNewBenName('');
-      setNewBenIban('');
-      setNewBenBank('');
-      setMessage({ type: 'success', text: store.t('transfer.ben_added')});
-  }
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Transfer Form Area */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-          <div className="flex border-b border-zinc-800">
-            <button 
-              onClick={() => setActiveTab('new')}
-              className={`flex-1 py-4 text-sm font-medium ${activeTab === 'new' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              {store.t('transfer.tab.new')}
-            </button>
-            <button 
-              onClick={() => setActiveTab('beneficiaries')}
-              className={`flex-1 py-4 text-sm font-medium ${activeTab === 'beneficiaries' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'}`}
-            >
-              {store.t('transfer.tab.ben')}
-            </button>
-          </div>
-
-          <div className="p-6">
-            {message && (
-              <div className={`mb-4 p-3 rounded-lg text-sm ${message.type === 'success' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}`}>
-                {message.text}
-              </div>
-            )}
-
-            {activeTab === 'new' ? (
-              <form onSubmit={handleTransfer} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.recipient')}</label>
-                  <select 
-                    value={selectedBen}
-                    onChange={(e) => setSelectedBen(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
-                    required
-                  >
-                    <option value="">{store.t('transfer.select_ben')}</option>
-                    {user.beneficiaries.map(ben => (
-                      <option key={ben.id} value={ben.id}>{ben.name} ({ben.bankName})</option>
-                    ))}
-                  </select>
+    <div className="max-w-2xl mx-auto space-y-8">
+      
+      {/* Stepper */}
+      <div className="flex items-center justify-between relative mb-8">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-800 -z-10"></div>
+            {[1, 2, 3, 4].map(s => (
+                <div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-4 border-black ${step >= s ? 'bg-brand-yellow text-black' : 'bg-zinc-800 text-zinc-500'}`}>
+                    {step > s ? <CheckCircle size={18}/> : s}
                 </div>
+            ))}
+      </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.amount')}</label>
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none text-xl font-bold"
-                    placeholder="0.00"
-                    min="1"
-                    step="0.01"
-                    required
-                  />
-                </div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 shadow-xl">
+        <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+                {step === 1 && store.t('interac.step1')}
+                {step === 2 && store.t('interac.step2')}
+                {step === 3 && store.t('interac.step3')}
+                {step === 4 && store.t('interac.step4')}
+            </h2>
+            <p className="text-zinc-400 text-sm">Step {step} of {totalSteps}</p>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.desc')}</label>
-                  <input 
-                    type="text" 
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
-                    placeholder="Payment for..."
-                  />
-                </div>
+        {msg && (
+            <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${msg.type === 'success' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-900/50' : 'bg-red-900/30 text-red-400 border border-red-900/50'}`}>
+            {msg.text}
+            </div>
+        )}
 
-                <div className="pt-4">
-                  <button type="submit" className="w-full bg-brand-yellow text-black font-bold py-3 rounded-lg hover:bg-yellow-400 flex items-center justify-center gap-2">
-                    <Send size={18} />
-                    {store.t('transfer.confirm')}
-                  </button>
-                </div>
-              </form>
-            ) : (
-                <div className="space-y-6">
-                    <form onSubmit={handleAddBeneficiary} className="bg-zinc-950/50 p-4 rounded-lg border border-zinc-800 space-y-4">
-                        <h4 className="text-white font-medium flex items-center gap-2"><Plus size={16}/> {store.t('transfer.add_new')}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <input 
+        {/* Form Steps */}
+        <div className="space-y-6">
+            
+            {/* Step 1: Recipient */}
+            {step === 1 && (
+                <>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.recipient')}</label>
+                        <div className="relative">
+                            <UserIcon className="absolute left-3 top-3.5 text-zinc-500" size={18} />
+                            <input 
                                 type="text"
-                                placeholder={store.t('transfer.name')}
-                                value={newBenName}
-                                onChange={e => setNewBenName(e.target.value)}
-                                className="bg-zinc-900 border border-zinc-800 rounded p-2 text-white text-sm"
-                                required
-                             />
-                             <input 
-                                type="text"
-                                placeholder={store.t('transfer.bank')}
-                                value={newBenBank}
-                                onChange={e => setNewBenBank(e.target.value)}
-                                className="bg-zinc-900 border border-zinc-800 rounded p-2 text-white text-sm"
-                             />
+                                className="w-full bg-black border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white focus:border-brand-yellow focus:outline-none"
+                                placeholder="Name"
+                                value={recipientName}
+                                onChange={e => setRecipientName(e.target.value)}
+                                autoFocus
+                            />
                         </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.contact_info')}</label>
                         <input 
                             type="text"
-                            placeholder={store.t('transfer.iban')}
-                            value={newBenIban}
-                            onChange={e => setNewBenIban(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-white text-sm"
-                            required
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            placeholder="email@example.com / 514-555-0199"
+                            value={contactInfo}
+                            onChange={e => setContactInfo(e.target.value)}
                         />
-                         <button type="submit" className="text-sm bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded">{store.t('transfer.save_ben')}</button>
-                    </form>
+                    </div>
+                     <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${addToContacts ? 'bg-brand-yellow border-brand-yellow' : 'border-zinc-700 bg-zinc-800'}`}>
+                            {addToContacts && <CheckCircle size={14} className="text-black" />}
+                        </div>
+                        <input type="checkbox" className="hidden" checked={addToContacts} onChange={e => setAddToContacts(e.target.checked)} />
+                        <span className="text-sm text-zinc-400 group-hover:text-white transition-colors">{store.t('interac.add_contact')}</span>
+                    </label>
+                </>
+            )}
 
-                    <div className="space-y-2">
-                        {user.beneficiaries.map(ben => (
-                            <div key={ben.id} className="flex justify-between items-center p-3 bg-zinc-950 rounded border border-zinc-800">
-                                <div>
-                                    <p className="text-white font-medium">{ben.name}</p>
-                                    <p className="text-xs text-zinc-500">{ben.accountNumber} • {ben.bankName}</p>
-                                </div>
-                                <button className="text-zinc-600 hover:text-red-500"><Trash2 size={16}/></button>
+            {/* Step 2: Amount */}
+            {step === 2 && (
+                <>
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.amount')}</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-zinc-500">€</span>
+                            <input 
+                                type="number"
+                                className="w-full bg-black border border-zinc-800 rounded-lg py-4 pl-10 pr-4 text-white text-3xl font-bold focus:border-brand-yellow focus:outline-none"
+                                placeholder="0.00"
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <p className="text-right text-xs text-brand-yellow mt-2 font-medium">{store.t('interac.fees')}</p>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.desc')}</label>
+                        <input 
+                            type="text"
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            placeholder="Optional message..."
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                        />
+                    </div>
+                </>
+            )}
+
+            {/* Step 3: Security */}
+            {step === 3 && (
+                <>
+                    <div className="p-4 bg-brand-yellow/10 border border-brand-yellow/20 rounded-lg flex items-start gap-3">
+                        <ShieldAlert className="text-brand-yellow shrink-0 mt-0.5" size={20} />
+                        <p className="text-sm text-brand-yellow/90 leading-relaxed font-medium">
+                            {store.t('interac.warning')}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_q')}</label>
+                        <input 
+                            type="text"
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            placeholder="e.g. Name of my first pet?"
+                            value={securityQuestion}
+                            onChange={e => setSecurityQuestion(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_a')}</label>
+                        <input 
+                            type="password"
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            value={securityAnswer}
+                            onChange={e => setSecurityAnswer(e.target.value)}
+                        />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_a_confirm')}</label>
+                        <input 
+                            type="password"
+                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            value={confirmAnswer}
+                            onChange={e => setConfirmAnswer(e.target.value)}
+                        />
+                    </div>
+                </>
+            )}
+
+            {/* Step 4: Summary */}
+            {step === 4 && (
+                <div className="space-y-4">
+                    <div className="bg-black/50 rounded-xl p-4 space-y-4 border border-zinc-800">
+                        <div className="flex justify-between items-center py-2 border-b border-zinc-800">
+                            <span className="text-zinc-500">{store.t('interac.step1')}</span>
+                            <div className="text-right">
+                                <p className="text-white font-medium">{recipientName}</p>
+                                <p className="text-xs text-zinc-500">{contactInfo}</p>
                             </div>
-                        ))}
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-zinc-800">
+                            <span className="text-zinc-500">{store.t('interac.step2')}</span>
+                            <span className="text-xl font-bold text-white">€{amount}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                             <span className="text-zinc-500">{store.t('interac.security_q')}</span>
+                             <span className="text-white text-sm italic">"{securityQuestion}"</span>
+                        </div>
                     </div>
                 </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Quick Info */}
-      <div className="space-y-6">
-        <div className="bg-brand-darkgreen p-6 rounded-xl text-white relative overflow-hidden">
-            <div className="absolute -right-6 -top-6 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
-            <h3 className="font-bold text-lg mb-2">{store.t('transfer.safe_title')}</h3>
-            <p className="text-sm text-emerald-100/70 mb-4">
-                {store.t('transfer.safe_desc')}
-            </p>
+            {/* Navigation Buttons */}
+            <div className="flex gap-4 pt-4">
+                {step > 1 && (
+                    <button 
+                        onClick={prevStep}
+                        className="flex-1 py-3 px-4 rounded-lg bg-zinc-800 text-white font-medium hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <ChevronLeft size={20} /> Back
+                    </button>
+                )}
+                
+                {step < totalSteps ? (
+                    <button 
+                        onClick={nextStep}
+                        className="flex-1 py-3 px-4 rounded-lg bg-white text-black font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                        Next <ArrowRight size={20} />
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handleTransfer}
+                        className="flex-1 py-3 px-4 rounded-lg bg-brand-yellow text-black font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                    >
+                        {store.t('interac.send')} <Send size={18} />
+                    </button>
+                )}
+            </div>
         </div>
       </div>
     </div>

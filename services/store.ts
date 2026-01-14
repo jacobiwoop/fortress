@@ -8,7 +8,8 @@ import {
   LoanStatus, 
   SiteConfig,
   Notification,
-  Language
+  Language,
+  TransactionStatus
 } from '../types';
 import { translations } from './translations';
 
@@ -31,11 +32,12 @@ const MOCK_USERS: User[] = [
       { id: 'n1', userId: 'u1', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
     ],
     transactions: [
-      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
-      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
-      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
-      { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
-      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, status: TransactionStatus.COMPLETED, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
+      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
+      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, status: TransactionStatus.COMPLETED, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
+       { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, status: TransactionStatus.COMPLETED, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
+      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't6', userId: 'u1', amount: -200, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING, date: new Date().toISOString(), description: 'ATM Withdrawal' }
     ]
   },
   {
@@ -95,16 +97,26 @@ class BankingStore {
   private listeners: (() => void)[] = [];
 
   constructor() {
+    // Restore language preference
     const storedLang = localStorage.getItem('fb_lang');
     if (storedLang && ['en', 'fr', 'pt', 'de'].includes(storedLang)) {
         this.currentLanguage = storedLang as Language;
     }
     
-    // Restore session
+    // Restore session (user authentication state only)
     const savedSession = localStorage.getItem('fb_session');
     if (savedSession) {
         try {
-            this.currentUser = JSON.parse(savedSession);
+            const sessionUser = JSON.parse(savedSession);
+            this.currentUser = sessionUser;
+            
+            // If Admin, immediately fetch fresh data from DB
+            if (sessionUser.role === UserRole.ADMIN) {
+                this.fetchUsers();
+            } else {
+                // For regular user, reload from DB
+                this.reloadCurrentUser();
+            }
         } catch (e) {
             localStorage.removeItem('fb_session');
         }
@@ -188,44 +200,28 @@ class BankingStore {
     }
   }
 
-  register(name: string, email: string, password: string, dob: string, address: string): User {
-    const existing = this.users.find(u => u.email === email);
-    if (existing) {
-        throw new Error(this.t('auth.error_exists') || 'Email already exists');
+  async register(name: string, email: string, password: string, dob: string, address: string): Promise<User> {
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, dateOfBirth: dob, address })
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || this.t('auth.error_exists'));
+        }
+        
+        const newUser = await res.json();
+        this.currentUser = newUser; // Auto login
+        
+        localStorage.setItem('fb_session', JSON.stringify(newUser));
+        this.notify();
+        return newUser;
+    } catch (e: any) {
+        throw new Error(e.message || 'Registration failed');
     }
-
-    const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        password, // Mock: Plain text
-        role: UserRole.USER,
-        balance: 0,
-        status: AccountStatus.ACTIVE,
-        iban: 'FR76 ' + Math.random().toString().slice(2, 12) + ' ' + Math.random().toString().slice(2, 12),
-        transactions: [],
-        notifications: [
-            { id: Math.random().toString(36), userId: '', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
-        ],
-        beneficiaries: [],
-        dateOfBirth: dob,
-        address: address,
-        cardNumber: '4242 4242 4242 ' + Math.floor(1000 + Math.random() * 9000),
-        cvv: Math.floor(100 + Math.random() * 900).toString()
-    };
-    
-    // Fix notification ID
-    newUser.notifications[0].userId = newUser.id;
-
-    this.users.push(newUser);
-    this.currentUser = newUser; // Auto login
-    
-    localStorage.setItem('fb_session', JSON.stringify(newUser));
-    // Save to local storage (Mock persistence for new users)
-    localStorage.setItem('fb_users', JSON.stringify(this.users));
-    
-    this.notify();
-    return newUser;
   }
 
   logout() {
@@ -233,6 +229,80 @@ class BankingStore {
     this.users = [];
     localStorage.removeItem('fb_session');
     this.notify();
+  }
+
+  async createTransaction(tx: Omit<Transaction, 'id' | 'status'>) {
+      if (!this.currentUser) return;
+      
+      // Backend now forces all transactions to PENDING status
+      // No need to determine status here
+      
+      try {
+          const res = await fetch(`${API_URL}/transactions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tx)
+          });
+
+          if (!res.ok) throw new Error("Transaction failed");
+
+          const newTx = await res.json();
+
+          // Update local state immediately for responsiveness
+          this.currentUser.transactions.unshift(newTx);
+          // Backend deducted balance automatically
+          this.currentUser.balance += tx.amount;
+          
+          this.notify();
+          await this.reloadCurrentUser(); // Sync fully with DB
+      } catch (e) {
+          console.error(e);
+          throw e; // Re-throw to UI
+      }
+  }
+
+  // Admin Methods for Transactions
+  getPendingTransactions(): { tx: Transaction, user: User }[] {
+      // Since we don't have a specific "get all pending" endpoint yet, 
+      // we rely on the fact that Admin fetches ALL users and their txs in fetchUsers()
+      // In a real large app, this should be a dedicated endpoint /api/transactions?status=PENDING
+      const pending: { tx: Transaction, user: User }[] = [];
+      this.users.forEach(u => {
+          u.transactions.forEach(t => {
+              if (t.status === TransactionStatus.PENDING) {
+                  pending.push({ tx: t, user: u });
+              }
+          });
+      });
+      return pending.sort((a, b) => new Date(b.tx.date).getTime() - new Date(a.tx.date).getTime());
+  }
+
+  async approveTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.COMPLETED, adminReason: reason })
+          });
+          if (res.ok) {
+            // Refresh All Users (since this affects a specific user)
+            // If we are admin, we likely want to see the update
+            await this.fetchUsers();
+          }
+      } catch (e) { console.error(e); }
+  }
+
+  async rejectTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.REJECTED, adminReason: reason })
+          });
+          if (res.ok) {
+            await this.fetchUsers();
+          }
+      } catch (e) { console.error(e); }
   }
 
   getCurrentUser(): User | null {
@@ -342,6 +412,39 @@ class BankingStore {
       });
       if (res.ok) {
           await this.fetchConfig();
+      }
+  }
+
+  // --- NOTIFICATIONS ---
+  
+  async sendNotification(userId: string, title: string, message: string, type: Notification['type']): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/notifications`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, title, message, type })
+          });
+          if (res.ok) {
+              await this.fetchUsers(); // Refresh to get updated notifications
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+      try {
+          const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+              method: 'PATCH'
+          });
+          if (res.ok) {
+              await this.reloadCurrentUser();
+          }
+      } catch (e) {
+          console.error(e);
       }
   }
 
