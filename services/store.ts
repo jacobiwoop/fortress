@@ -99,6 +99,17 @@ class BankingStore {
     if (storedLang && ['en', 'fr', 'pt', 'de'].includes(storedLang)) {
         this.currentLanguage = storedLang as Language;
     }
+    
+    // Restore session
+    const savedSession = localStorage.getItem('fb_session');
+    if (savedSession) {
+        try {
+            this.currentUser = JSON.parse(savedSession);
+        } catch (e) {
+            localStorage.removeItem('fb_session');
+        }
+    }
+
     this.fetchConfig(); // Load config on start
   }
 
@@ -169,6 +180,7 @@ class BankingStore {
         }
 
         this.notify();
+        localStorage.setItem('fb_session', JSON.stringify(user));
         return user;
     } catch (e) {
         console.error(e);
@@ -208,6 +220,7 @@ class BankingStore {
     this.users.push(newUser);
     this.currentUser = newUser; // Auto login
     
+    localStorage.setItem('fb_session', JSON.stringify(newUser));
     // Save to local storage (Mock persistence for new users)
     localStorage.setItem('fb_users', JSON.stringify(this.users));
     
@@ -218,6 +231,7 @@ class BankingStore {
   logout() {
     this.currentUser = null;
     this.users = [];
+    localStorage.removeItem('fb_session');
     this.notify();
   }
 
