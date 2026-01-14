@@ -8,34 +8,85 @@ export const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [lang, setLang] = useState(store.getLanguage());
 
-  useEffect(() => {
-    setUser(store.getCurrentUser());
-    const unsub = store.subscribe(() => {
-        setUser(store.getCurrentUser());
-        setLang(store.getLanguage());
-    });
-    return unsub;
-  }, []);
+  const [actionType, setActionType] = useState<'deposit' | 'withdraw' | null>(null);
+  const [amount, setAmount] = useState('');
 
-  if (!user) return null;
+  // ... (useEffect)
 
-  // Prepare chart data (cumulative balance over last 5 tx)
-  const chartData = [...user.transactions].reverse().map((t, index) => ({
-    name: new Date(t.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }),
-    amount: Math.abs(t.amount),
-    type: t.amount > 0 ? 'Income' : 'Expense'
-  })).slice(-7);
+  const handleAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !amount) return;
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) return;
 
-  const totalIncome = user.transactions
-    .filter(t => t.amount > 0)
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const totalExpense = user.transactions
-    .filter(t => t.amount < 0)
-    .reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
+    try {
+        await store.createTransaction({
+            userId: user.id,
+            amount: actionType === 'deposit' ? val : -val,
+            type: actionType === 'deposit' ? TransactionType.DEPOSIT : TransactionType.WITHDRAWAL,
+            description: actionType === 'deposit' ? 'Deposit' : 'Withdrawal',
+            counterparty: 'ATM / Branch',
+            date: new Date().toISOString()
+        });
+        setActionType(null);
+        setAmount('');
+    } catch (err) {
+        console.error(err);
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-4">
+        <button onClick={() => setActionType('deposit')} className="bg-zinc-900 hover:bg-zinc-800 p-4 rounded-xl flex flex-col items-center gap-2 transition-colors border border-zinc-800 group">
+            <div className="w-12 h-12 rounded-full bg-emerald-900/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowUpRight size={24} />
+            </div>
+            <span className="text-sm font-medium text-zinc-300">{store.t('action.deposit')}</span>
+        </button>
+        <button onClick={() => setActionType('withdraw')} className="bg-zinc-900 hover:bg-zinc-800 p-4 rounded-xl flex flex-col items-center gap-2 transition-colors border border-zinc-800 group">
+             <div className="w-12 h-12 rounded-full bg-red-900/30 text-red-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowDownLeft size={24} />
+            </div>
+            <span className="text-sm font-medium text-zinc-300">{store.t('action.withdraw')}</span>
+        </button>
+        <button onClick={() => window.location.hash = '#/transfers'} className="bg-zinc-900 hover:bg-zinc-800 p-4 rounded-xl flex flex-col items-center gap-2 transition-colors border border-zinc-800 group">
+             <div className="w-12 h-12 rounded-full bg-blue-900/30 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ArrowRightLeft size={24} />
+            </div>
+            <span className="text-sm font-medium text-zinc-300 text-center">{store.t('action.interac')}</span>
+        </button>
+      </div>
+
+      {/* Action Modal */}
+      {actionType && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm">
+                <h3 className="text-xl font-bold text-white mb-4">
+                    {actionType === 'deposit' ? store.t('action.deposit') : store.t('action.withdraw')}
+                </h3>
+                <form onSubmit={handleAction} className="space-y-4">
+                    <div>
+                        <label className="text-sm text-zinc-400">Amount</label>
+                        <input 
+                            type="number" 
+                            autoFocus
+                            value={amount}
+                            onChange={e => setAmount(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white text-lg focus:border-brand-yellow focus:outline-none mt-1"
+                            placeholder="0.00"
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        <button type="button" onClick={() => setActionType(null)} className="flex-1 py-3 rounded-lg bg-zinc-800 text-white font-medium">Cancel</button>
+                        <button type="submit" className="flex-1 py-3 rounded-lg bg-brand-yellow text-black font-bold">Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      )}
+
       {/* Top Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Balance */}

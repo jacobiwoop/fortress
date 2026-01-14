@@ -56,6 +56,7 @@ export const Layout: React.FC = () => {
   const userLinks = [
     { name: store.t('nav.dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: store.t('nav.transfers'), path: '/transfers', icon: <ArrowRightLeft size={20} /> },
+    { name: store.t('nav.services'), path: '/services', icon: <ShieldCheck size={20} /> }, // New
     { name: store.t('nav.cards'), path: '/cards', icon: <CreditCard size={20} /> },
     { name: store.t('nav.loans'), path: '/loans', icon: <HandCoins size={20} /> },
   ];
@@ -72,18 +73,20 @@ export const Layout: React.FC = () => {
   return (
     <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans">
       
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay for Sidebar (Optional now with Bottom Nav but kept for consistency) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 bg-black/80 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar (Desktop Hidden on Mobile except if toggled, but we use Bottom Nav for main) */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-200 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
+        hidden lg:block 
       `}>
-        <div className="flex items-center h-16 px-6 border-b border-zinc-800">
+          {/* ... Desktop Sidebar Content Same as Before ... */}
+         <div className="flex items-center h-16 px-6 border-b border-zinc-800">
           <div className="flex items-center gap-2">
             {config.logoUrl ? (
               <img src={config.logoUrl} alt={config.name} className="w-8 h-8 object-contain" />
@@ -94,9 +97,6 @@ export const Layout: React.FC = () => {
             )}
             <span className="text-lg font-bold tracking-tight text-white">{config.name}</span>
           </div>
-          <button className="ml-auto lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
-            <X size={24} />
-          </button>
         </div>
 
         <nav className="p-4 space-y-1">
@@ -106,10 +106,7 @@ export const Layout: React.FC = () => {
           {links.map((link) => (
             <button
               key={link.path}
-              onClick={() => {
-                navigate(link.path);
-                setIsMobileMenuOpen(false);
-              }}
+              onClick={() => navigate(link.path)}
               className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                 ${location.pathname === link.path 
@@ -124,12 +121,8 @@ export const Layout: React.FC = () => {
         </nav>
 
         <div className="absolute bottom-0 w-full p-4 border-t border-zinc-800 space-y-2">
-            {/* Clickable Profile Section */}
             <div 
-                onClick={() => {
-                    navigate('/profile');
-                    setIsMobileMenuOpen(false);
-                }}
+                onClick={() => navigate('/profile')}
                 className="flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer hover:bg-zinc-900 transition-colors group"
             >
                 <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold group-hover:bg-zinc-700">
@@ -137,7 +130,6 @@ export const Layout: React.FC = () => {
                 </div>
                 <div className="overflow-hidden">
                     <p className="text-sm font-medium text-white truncate">{currentUser.name}</p>
-                    <p className="text-xs text-zinc-500 truncate">{currentUser.email}</p>
                 </div>
             </div>
 
@@ -152,17 +144,17 @@ export const Layout: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 flex flex-col overflow-hidden relative pb-16 lg:pb-0">
         {/* Header */}
         <header className="h-16 bg-zinc-950/50 backdrop-blur-md border-b border-zinc-800 flex items-center justify-between px-4 sm:px-8">
             <div className="flex items-center gap-4">
-                <button 
-                    className="lg:hidden p-2 -ml-2 text-zinc-400 hover:text-white"
-                    onClick={() => setIsMobileMenuOpen(true)}
-                >
-                    <Menu size={24} />
-                </button>
-                <h1 className="text-xl font-semibold text-white">
+               {/* Mobile Logo Only (No menu button, use Bottom Nav) */}
+               <div className="lg:hidden flex items-center gap-2">
+                   {config.logoUrl ? <img src={config.logoUrl} className="h-8" /> : <ShieldCheck className="text-brand-yellow" />}
+                   <span className="font-bold text-white">{config.name}</span>
+               </div>
+               
+               <h1 className="hidden lg:block text-xl font-semibold text-white">
                     {location.pathname === '/profile' 
                         ? store.t('profile.title') 
                         : (links.find(l => l.path === location.pathname)?.name || 'Fortress Bank')}
@@ -170,28 +162,15 @@ export const Layout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-                {/* Language Selector */}
-                <div className="relative flex items-center bg-zinc-900 rounded-lg border border-zinc-800 px-2 py-1">
-                    <Languages size={16} className="text-zinc-500 mr-2" />
-                    <select 
-                        value={currentLang}
-                        onChange={handleLangChange}
-                        className="bg-transparent text-sm text-zinc-300 focus:outline-none cursor-pointer"
-                    >
-                        <option value="fr">Français</option>
-                        <option value="en">English</option>
-                        <option value="pt">Português</option>
-                        <option value="de">Deutsch</option>
-                    </select>
-                </div>
-
-                {/* Notifications Bell (Demo Only) */}
                 <div className="relative">
                     <Bell size={20} className="text-zinc-400 hover:text-white cursor-pointer" />
                     {currentUser.notifications.some(n => !n.read) && (
                         <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black"></span>
                     )}
                 </div>
+                 <button className="lg:hidden text-zinc-400" onClick={handleLogout}>
+                    <LogOut size={20} />
+                </button>
             </div>
         </header>
 
@@ -202,6 +181,22 @@ export const Layout: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 lg:hidden z-50 pb-safe">
+        <div className="flex justify-around items-center h-16">
+          {links.slice(0, 5).map((link) => (
+             <button
+               key={link.path}
+               onClick={() => navigate(link.path)}
+               className={`flex flex-col items-center gap-1 w-full h-full justify-center ${location.pathname === link.path ? 'text-brand-yellow' : 'text-zinc-500'}`}
+             >
+               {React.cloneElement(link.icon as React.ReactElement, { size: 24 })}
+               <span className="text-[10px] font-medium">{link.name}</span>
+             </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

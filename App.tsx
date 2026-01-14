@@ -8,6 +8,7 @@ import { UserDashboard } from './views/user/UserDashboard';
 import { Transfers } from './views/user/Transfers';
 import { Cards } from './views/user/Cards';
 import { Loans } from './views/user/Loans';
+import { Services } from './views/user/Services'; // Import Services
 import { Profile } from './views/user/Profile'; // Import Profile
 import { AdminDashboard } from './views/admin/AdminDashboard';
 import { UserManagement } from './views/admin/UserManagement';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/transfers" element={<Transfers />} />
           <Route path="/cards" element={<Cards />} />
           <Route path="/loans" element={<Loans />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/profile" element={<Profile />} />
 
           {/* Admin Routes */}
