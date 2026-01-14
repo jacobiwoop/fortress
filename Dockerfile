@@ -3,8 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or similar)
-COPY package.json package-lock.json* ./
+# Copy package.json only (ignoring lock file to force fresh install for Alpine/musl compatibility)
+COPY package.json ./
 
 # Install dependencies
 RUN npm install
