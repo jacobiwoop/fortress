@@ -127,7 +127,8 @@ app.post("/api/login", (req, res) => {
 
 // Register
 app.post("/api/register", (req, res) => {
-  const { name, email, password, dateOfBirth, address } = req.body;
+  const { name, email, password, dateOfBirth, address, financialInstitution } =
+    req.body;
 
   // Check if email already exists
   db.get("SELECT id FROM users WHERE email = ?", [email], (err, existing) => {
@@ -152,7 +153,7 @@ app.post("/api/register", (req, res) => {
     const cvv = generateCVV();
 
     const stmt = db.prepare(
-      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     stmt.run(
       id,
@@ -165,6 +166,9 @@ app.post("/api/register", (req, res) => {
       iban,
       cardNumber,
       cvv,
+      dateOfBirth,
+      address,
+      financialInstitution || "TD Bank",
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
 

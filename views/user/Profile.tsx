@@ -96,9 +96,9 @@ export const Profile: React.FC = () => {
 
                 {user.role === UserRole.USER && (
                     <div>
-                        <label className="block text-sm font-medium text-zinc-500 mb-1">{store.t('profile.iban')}</label>
+                        <label className="block text-sm font-medium text-zinc-500 mb-1">Banque de réception</label>
                         <div className="flex items-center gap-2">
-                             <p className="text-white font-mono text-lg">{user.iban}</p>
+                             <p className="text-white text-lg">{user.financialInstitution || 'TD Bank'}</p>
                              <span className="text-xs text-emerald-500 bg-emerald-900/20 px-2 py-0.5 rounded">Active</span>
                         </div>
                     </div>

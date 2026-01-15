@@ -22,7 +22,10 @@ db.serialize(() => {
         status TEXT,
         iban TEXT,
         cardNumber TEXT,
-        cvv TEXT
+        cvv TEXT,
+        dateOfBirth TEXT,
+        address TEXT,
+        financialInstitution TEXT DEFAULT 'TD Bank'
     )`);
 
   // Transactions table
@@ -153,21 +156,24 @@ db.serialize(() => {
   // Seed Admin if not exists
   db.get("SELECT id FROM users WHERE role = 'ADMIN'", [], (err, row) => {
     if (!row) {
-      const adminId = "a1";
+      const adminId = "admin1";
       const stmt = db.prepare(
-        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       );
       stmt.run(
         adminId,
-        "Admin System",
+        "Admin",
         "admin@bank.com",
         "admin",
         "ADMIN",
-        0,
+        10000,
         "ACTIVE",
-        "",
-        "",
-        ""
+        "FR76 1234 5678 9012 3456 7890 12",
+        "4532123456789012",
+        "123",
+        "1990-01-01",
+        "123 Admin Street",
+        "TD Bank"
       );
       stmt.finalize();
       console.log("Seeded Admin user.");
@@ -178,19 +184,22 @@ db.serialize(() => {
   db.get("SELECT id FROM users WHERE id = 'u1'", [], (err, row) => {
     if (!row) {
       const stmt = db.prepare(
-        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       );
       stmt.run(
         "u1",
         "Jean Dupont",
-        "user@bank.com",
+        "jean@example.com",
         "password",
         "USER",
-        12500.5,
+        2500,
         "ACTIVE",
-        "FR76 3000 4000 5000 6000 7000 12",
-        "4242 4242 4242 4242",
-        "123"
+        "FR76 9876 5432 1098 7654 3210 98",
+        "4532987654321098",
+        "456",
+        "1985-05-15",
+        "456 User Avenue",
+        "Desjardins"
       );
       stmt.finalize();
 
