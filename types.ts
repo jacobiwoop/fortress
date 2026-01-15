@@ -91,6 +91,7 @@ export interface DocumentRequest {
   submittedDate?: string;
   fileName?: string;
   fileSize?: string;
+  filePath?: string;
   adminReason?: string;
   notificationType: 'alert' | 'info';
   userName?: string; // For admin view
@@ -101,6 +102,7 @@ export interface SiteConfig {
   name: string;
   logoText: string;
   logoUrl: string | null;
+  dashboardNotificationCount?: number;
 }
 
 export interface User {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
 import { User, DocumentRequest, DocumentStatus } from '../../types';
-import { FileText, Send, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { FileText, Send, CheckCircle, XCircle, Clock, AlertTriangle, Download, Image as ImageIcon } from 'lucide-react';
 
 export const DocumentRequests: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -86,6 +86,53 @@ export const DocumentRequests: React.FC = () => {
             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${badge.color}`}>
                 {badge.icon} {badge.text}
             </span>
+        );
+    };
+
+    const getFileType = (fileName?: string): 'image' | 'pdf' | 'other' => {
+        if (!fileName) return 'other';
+        const ext = fileName.toLowerCase().split('.').pop();
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return 'image';
+        if (ext === 'pdf') return 'pdf';
+        return 'other';
+    };
+
+    const renderFilePreview = (req: DocumentRequest) => {
+        if (!req.filePath) return null;
+        const fileType = getFileType(req.fileName);
+        const fileUrl = `http://localhost:3001${req.filePath}`;
+
+        return (
+            <div className="mt-3 space-y-2">
+                {fileType === 'image' && (
+                    <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                        <img 
+                            src={fileUrl} 
+                            alt={req.fileName} 
+                            className="w-full max-h-64 object-contain bg-zinc-950"
+                        />
+                    </div>
+                )}
+                {fileType === 'pdf' && (
+                    <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                        <iframe 
+                            src={fileUrl} 
+                            className="w-full h-64"
+                            title={req.fileName}
+                        />
+                    </div>
+                )}
+                <a 
+                    href={fileUrl} 
+                    download={req.fileName}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                    <Download size={16} />
+                    Download {req.fileName}
+                </a>
+            </div>
         );
     };
 
@@ -229,6 +276,8 @@ export const DocumentRequests: React.FC = () => {
                                     <FileText size={14} className="inline mr-1" />
                                     File: {req.fileName} ({req.fileSize})
                                 </p>
+
+                                {renderFilePreview(req)}
 
                                 {reviewingId === req.id ? (
                                     <div className="space-y-2">

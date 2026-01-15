@@ -507,7 +507,7 @@ app.post("/api/document-requests", (req, res) => {
   const requestDate = new Date().toISOString();
 
   db.run(
-    "INSERT INTO document_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO document_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       id,
       userId,
@@ -516,11 +516,12 @@ app.post("/api/document-requests", (req, res) => {
       description,
       status,
       requestDate,
-      null,
-      null,
-      null,
-      null,
+      null, // submittedDate
+      null, // fileName
+      null, // fileSize
+      null, // adminReason
       notificationType || "info",
+      null, // filePath
     ],
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -575,19 +576,31 @@ app.get("/api/document-requests/user/:userId", (req, res) => {
 });
 
 // Submit document (user uploads metadata)
-app.patch("/api/document-requests/:id/submit", (req, res) => {
-  const { fileName, fileSize } = req.body;
-  const submittedDate = new Date().toISOString();
+// Submit document (user uploads file)
+app.patch(
+  "/api/document-requests/:id/submit",
+  upload.single("document"),
+  (req, res) => {
+    const submittedDate = new Date().toISOString();
 
-  db.run(
-    "UPDATE document_requests SET status = 'SUBMITTED', submittedDate = ?, fileName = ?, fileSize = ? WHERE id = ?",
-    [submittedDate, fileName, fileSize, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
     }
-  );
-});
+
+    const fileName = req.file.originalname;
+    const fileSize = `${(req.file.size / 1024).toFixed(2)} KB`;
+    const filePath = `/uploads/${req.file.filename}`;
+
+    db.run(
+      "UPDATE document_requests SET status = 'SUBMITTED', submittedDate = ?, fileName = ?, fileSize = ?, filePath = ? WHERE id = ?",
+      [submittedDate, fileName, fileSize, filePath, req.params.id],
+      (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, filePath });
+      }
+    );
+  }
+);
 
 // Review document (approve/reject)
 app.patch("/api/document-requests/:id/review", (req, res) => {
@@ -649,13 +662,17 @@ app.get("/api/settings", (req, res) => {
 });
 
 app.post("/api/settings", (req, res) => {
-  const { name, logoText, logoUrl } = req.body;
+  const { name, logoText, logoUrl, dashboardNotificationCount } = req.body;
+
   db.run(
-    "UPDATE site_config SET name = ?, logoText = ?, logoUrl = ? WHERE id = 1",
-    [name, logoText, logoUrl],
-    function (err) {
+    "UPDATE site_config SET name = ?, logoText = ?, logoUrl = ?, dashboardNotificationCount = ? WHERE id = 1",
+    [name, logoText, logoUrl, dashboardNotificationCount || 3],
+    (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
+      db.get("SELECT * FROM site_config WHERE id = 1", [], (err, config) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(config);
+      });
     }
   );
 });

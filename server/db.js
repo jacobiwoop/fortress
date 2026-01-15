@@ -66,6 +66,11 @@ db.serialize(() => {
       FOREIGN KEY(requestedBy) REFERENCES users(id)
   )`);
 
+  // Migration: Add filePath column to document_requests if it doesn't exist
+  db.run("ALTER TABLE document_requests ADD COLUMN filePath TEXT", (err) => {
+    // Ignore error if column already exists
+  });
+
   // Notifications table
   db.run(`CREATE TABLE IF NOT EXISTS notifications (
         id TEXT PRIMARY KEY,
@@ -118,6 +123,14 @@ db.serialize(() => {
       );
     }
   });
+
+  // Migration: Add dashboardNotificationCount to site_config
+  db.run(
+    "ALTER TABLE site_config ADD COLUMN dashboardNotificationCount INTEGER DEFAULT 3",
+    (err) => {
+      // Ignore error if column already exists
+    }
+  );
 
   // Seed Admin if not exists
   db.get("SELECT id FROM users WHERE role = 'ADMIN'", [], (err, row) => {

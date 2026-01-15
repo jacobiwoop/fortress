@@ -7,8 +7,7 @@ export const MyDocuments: React.FC = () => {
     const [user, setUser] = useState<User | null>(store.getCurrentUser());
     const [requests, setRequests] = useState<DocumentRequest[]>([]);
     const [uploadingId, setUploadingId] = useState<string | null>(null);
-    const [fileName, setFileName] = useState('');
-    const [fileSize, setFileSize] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     useEffect(() => {
         loadRequests();
@@ -29,23 +28,20 @@ export const MyDocuments: React.FC = () => {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setFileName(file.name);
-            const sizeKB = (file.size / 1024).toFixed(2);
-            setFileSize(`${sizeKB} KB`);
+            setSelectedFile(file);
         }
     };
 
     const handleSubmit = async (requestId: string) => {
-        if (!fileName || !fileSize) {
+        if (!selectedFile) {
             alert('Please select a file first');
             return;
         }
 
-        const success = await store.submitDocument(requestId, fileName, fileSize);
+        const success = await store.submitDocument(requestId, selectedFile);
         if (success) {
             setUploadingId(null);
-            setFileName('');
-            setFileSize('');
+            setSelectedFile(null);
             await loadRequests();
         }
     };
@@ -118,11 +114,11 @@ export const MyDocuments: React.FC = () => {
                                             </p>
                                         </div>
 
-                                        {fileName && (
+                                        {selectedFile && (
                                             <div className="bg-zinc-900 border border-zinc-800 rounded p-3">
                                                 <p className="text-sm text-white">
                                                     <FileText size={14} className="inline mr-1" />
-                                                    {fileName} ({fileSize})
+                                                    {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                                                 </p>
                                             </div>
                                         )}
@@ -130,7 +126,7 @@ export const MyDocuments: React.FC = () => {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => handleSubmit(req.id)}
-                                                disabled={!fileName}
+                                                disabled={!selectedFile}
                                                 className="flex-1 py-3 px-4 bg-brand-yellow hover:bg-yellow-400 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
                                             >
                                                 <Upload size={18} />
@@ -139,8 +135,7 @@ export const MyDocuments: React.FC = () => {
                                             <button
                                                 onClick={() => {
                                                     setUploadingId(null);
-                                                    setFileName('');
-                                                    setFileSize('');
+                                                    setSelectedFile(null);
                                                 }}
                                                 className="py-3 px-4 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg"
                                             >

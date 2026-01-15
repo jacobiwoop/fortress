@@ -404,11 +404,11 @@ class BankingStore {
     }
   }
 
-  async updateConfig(name: string, logoText: string, logoUrl: string | null) { 
+  async updateConfig(name: string, logoText: string, logoUrl: string | null, dashboardNotificationCount?: number) { 
       const res = await fetch(`${API_URL}/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, logoText, logoUrl })
+          body: JSON.stringify({ name, logoText, logoUrl, dashboardNotificationCount })
       });
       if (res.ok) {
           await this.fetchConfig();
@@ -480,15 +480,17 @@ class BankingStore {
       }
   }
 
-  async submitDocument(requestId: string, fileName: string, fileSize: string): Promise<boolean> {
+  async submitDocument(requestId: string, file: File): Promise<boolean> {
       try {
+          const formData = new FormData();
+          formData.append('document', file);
+
           const res = await fetch(`${API_URL}/document-requests/${requestId}/submit`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fileName, fileSize })
+              body: formData // Don't set Content-Type header, browser will set it with boundary
           });
           if (res.ok) {
-              await this.reloadCurrentUser();
+              await this.fetchUsers();
               return true;
           }
           return false;
