@@ -302,7 +302,7 @@ app.post("/api/transactions", (req, res) => {
 
     // Insert Transaction
     const stmt = db.prepare(
-      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     stmt.run(
       id,
@@ -314,6 +314,8 @@ app.post("/api/transactions", (req, res) => {
       counterparty,
       txStatus, // ✅ status after counterparty
       null, // adminReason - initially null
+      null, // paymentLink - initially null
+      null, // adminMessage - initially null
       function (err) {
         if (err) {
           db.run("ROLLBACK");
@@ -374,6 +376,49 @@ app.patch("/api/transactions/:id", (req, res) => {
         }
       );
     }
+  });
+});
+
+// Send payment instructions for deposit (admin)
+app.patch("/api/transactions/:id/payment-instructions", (req, res) => {
+  const { paymentLink, adminMessage } = req.body;
+  const { id } = req.params;
+
+  // Get transaction details
+  db.get("SELECT * FROM transactions WHERE id = ?", [id], (err, tx) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tx) return res.status(404).json({ error: "Transaction not found" });
+
+    // Update transaction with payment link and message
+    db.run(
+      "UPDATE transactions SET paymentLink = ?, adminMessage = ? WHERE id = ?",
+      [paymentLink, adminMessage, id],
+      (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // Send notification to user
+        const notifId = generateId();
+        const notifTitle = `Deposit Request - Payment Instructions`;
+        const notifMessage = `${adminMessage}\n\nAmount: ${tx.amount}€\nPayment Link: ${paymentLink}`;
+
+        db.run(
+          "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [
+            notifId,
+            tx.userId,
+            notifTitle,
+            notifMessage,
+            new Date().toISOString(),
+            0,
+            "alert",
+          ],
+          (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+          }
+        );
+      }
+    );
   });
 });
 

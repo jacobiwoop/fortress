@@ -42,6 +42,8 @@ export interface Transaction {
   description: string;
   counterparty?: string; // For transfers
   adminReason?: string; // Admin reason for approval/rejection
+  paymentLink?: string; // Payment link for deposit requests
+  adminMessage?: string; // Admin message for deposit instructions
 }
 
 export interface Notification {

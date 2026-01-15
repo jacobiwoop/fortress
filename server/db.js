@@ -48,6 +48,16 @@ db.serialize(() => {
     // Ignore error if column already exists
   });
 
+  // Migration: Add paymentLink column for deposit approval workflow
+  db.run("ALTER TABLE transactions ADD COLUMN paymentLink TEXT", (err) => {
+    // Ignore error if column already exists
+  });
+
+  // Migration: Add adminMessage column for deposit instructions
+  db.run("ALTER TABLE transactions ADD COLUMN adminMessage TEXT", (err) => {
+    // Ignore error if column already exists
+  });
+
   // Create document_requests table
   db.run(`CREATE TABLE IF NOT EXISTS document_requests (
       id TEXT PRIMARY KEY,
@@ -179,8 +189,20 @@ db.serialize(() => {
       // Seed some initial transactions for Jean
       const date = new Date().toISOString();
       db.run(
-        "INSERT INTO transactions (id, userId, amount, type, status, date, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        ["t_init_1", "u1", 2500, "DEPOSIT", "COMPLETED", date, "Solde Initial"]
+        "INSERT INTO transactions (id, userId, amount, type, date, description, counterparty, status, adminReason, paymentLink, adminMessage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          "t_init_1",
+          "u1",
+          2500,
+          "DEPOSIT",
+          date,
+          "Solde Initial",
+          null,
+          "COMPLETED",
+          null,
+          null,
+          null,
+        ]
       );
 
       console.log("Seeded User (Jean Dupont).");

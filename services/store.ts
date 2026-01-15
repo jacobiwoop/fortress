@@ -374,6 +374,24 @@ class BankingStore {
        
        await this.reloadCurrentUser();
   }
+
+  async sendDepositInstructions(transactionId: string, paymentLink: string, adminMessage: string): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${transactionId}/payment-instructions`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentLink, adminMessage })
+          });
+          if (res.ok) {
+              await this.fetchUsers();
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
   
   // Keep these as placeholders or implement similarly
   async requestLoan(userId: string, amount: number, purpose: string) {
