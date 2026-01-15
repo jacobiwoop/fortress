@@ -200,12 +200,12 @@ class BankingStore {
     }
   }
 
-  async register(name: string, email: string, password: string, dob: string, address: string): Promise<User> {
+  async register(name: string, email: string, password: string, dob: string, address: string, financialInstitution: string = 'TD Bank'): Promise<User> {
     try {
         const res = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, dateOfBirth: dob, address })
+            body: JSON.stringify({ name, email, password, dateOfBirth: dob, address, financialInstitution })
         });
 
         if (!res.ok) {

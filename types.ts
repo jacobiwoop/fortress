@@ -118,15 +118,10 @@ export interface User {
   iban: string;
   cardNumber?: string;
   cvv?: string;
+  financialInstitution?: string;
   transactions: Transaction[];
   notifications: Notification[];
   beneficiaries: Beneficiary[];
   dateOfBirth?: string;
   address?: string;
-}
-
-export interface SiteConfig {
-  name: string;
-  logoText: string;
-  logoUrl: string | null;
 }

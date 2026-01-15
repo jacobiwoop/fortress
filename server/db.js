@@ -81,6 +81,14 @@ db.serialize(() => {
     // Ignore error if column already exists
   });
 
+  // Migration: Add financialInstitution column to users
+  db.run(
+    "ALTER TABLE users ADD COLUMN financialInstitution TEXT DEFAULT 'TD Bank'",
+    (err) => {
+      // Ignore error if column already exists
+    }
+  );
+
   // Notifications table
   db.run(`CREATE TABLE IF NOT EXISTS notifications (
         id TEXT PRIMARY KEY,
