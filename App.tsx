@@ -20,6 +20,7 @@ import { TransactionApprovals } from './views/admin/TransactionApprovals';
 import { SendNotifications } from './views/admin/SendNotifications';
 import { DocumentRequests } from './views/admin/DocumentRequests';
 import { SiteSettings } from './views/admin/SiteSettings';
+import { InstitutionChangeRequests } from './views/admin/InstitutionChangeRequests';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           <Route path="/admin/transactions" element={<TransactionApprovals />} />
           <Route path="/admin/notifications" element={<SendNotifications />} />
           <Route path="/admin/documents" element={<DocumentRequests />} />
+          <Route path="/admin/institution-requests" element={<InstitutionChangeRequests />} />
           <Route path="/admin/settings" element={<SiteSettings />} />
         </Route>
       </Routes>

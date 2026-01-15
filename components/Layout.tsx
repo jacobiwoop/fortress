@@ -16,7 +16,8 @@ import {
   X,
   Languages,
   History,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 import { AlertModal } from './AlertModal';
 
@@ -79,6 +80,7 @@ export const Layout: React.FC = () => {
     { name: store.t('nav.users'), path: '/admin/users', icon: <Users size={20} /> },
     { name: store.t('nav.requests'), path: '/admin/loans', icon: <ShieldCheck size={20} /> },
     { name: 'Tx Approvals', path: '/admin/transactions', icon: <ArrowRightLeft size={20} /> },
+    { name: 'Institution Requests', path: '/admin/institution-requests', icon: <Building2 size={20} /> },
     { name: store.t('nav.notifications'), path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: store.t('nav.documents'), path: '/admin/documents', icon: <FileText size={20} /> },
     { name: store.t('nav.settings'), path: '/admin/settings', icon: <Settings size={20} /> },

@@ -1,0 +1,173 @@
+// --- INSTITUTION CHANGE REQUESTS ---
+
+// Create institution change request
+app.post("/api/institution-change-requests", (req, res) => {
+  const { userId, requestedInstitution } = req.body;
+
+  // Get user's current institution
+  db.get(
+    "SELECT name, financialInstitution FROM users WHERE id = ?",
+    [userId],
+    (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const id = generateId();
+      const requestDate = new Date().toISOString();
+
+      db.run(
+        "INSERT INTO institution_change_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          id,
+          userId,
+          user.name,
+          user.financialInstitution || "TD Bank",
+          requestedInstitution,
+          "PENDING",
+          requestDate,
+          null,
+        ],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Create notification for user
+          const notifId = generateId();
+          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            notifId,
+            userId,
+            "Demande de changement d'institution",
+            `Votre demande de changement vers ${requestedInstitution} a été soumise et est en attente d'approbation.`,
+            requestDate,
+            0,
+            "info",
+          ]);
+
+          res.status(201).json({
+            id,
+            userId,
+            userName: user.name,
+            currentInstitution: user.financialInstitution || "TD Bank",
+            requestedInstitution,
+            status: "PENDING",
+            requestDate,
+          });
+        }
+      );
+    }
+  );
+});
+
+// Get all institution change requests (admin)
+app.get("/api/institution-change-requests", (req, res) => {
+  db.all(
+    "SELECT * FROM institution_change_requests ORDER BY requestDate DESC",
+    [],
+    (err, requests) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(requests);
+    }
+  );
+});
+
+// Get user's institution change requests
+app.get("/api/institution-change-requests/user/:userId", (req, res) => {
+  db.all(
+    "SELECT * FROM institution_change_requests WHERE userId = ? ORDER BY requestDate DESC",
+    [req.params.userId],
+    (err, requests) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(requests);
+    }
+  );
+});
+
+// Approve institution change request
+app.patch("/api/institution-change-requests/:id/approve", (req, res) => {
+  const { adminReason } = req.body;
+
+  // Get request details
+  db.get(
+    "SELECT * FROM institution_change_requests WHERE id = ?",
+    [req.params.id],
+    (err, request) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!request) return res.status(404).json({ error: "Request not found" });
+
+      // Update user's financial institution
+      db.run(
+        "UPDATE users SET financialInstitution = ? WHERE id = ?",
+        [request.requestedInstitution, request.userId],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Update request status
+          db.run(
+            "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
+            ["APPROVED", adminReason || null, req.params.id],
+            function (err) {
+              if (err) return res.status(500).json({ error: err.message });
+
+              // Create notification for user
+              const notifId = generateId();
+              db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+                notifId,
+                request.userId,
+                "Changement d'institution approuvé",
+                `Votre demande de changement vers ${
+                  request.requestedInstitution
+                } a été approuvée. ${adminReason || ""}`,
+                new Date().toISOString(),
+                0,
+                "success",
+              ]);
+
+              res.json({
+                message: "Request approved and user institution updated",
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// Reject institution change request
+app.patch("/api/institution-change-requests/:id/reject", (req, res) => {
+  const { adminReason } = req.body;
+
+  // Get request details
+  db.get(
+    "SELECT * FROM institution_change_requests WHERE id = ?",
+    [req.params.id],
+    (err, request) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!request) return res.status(404).json({ error: "Request not found" });
+
+      // Update request status
+      db.run(
+        "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
+        ["REJECTED", adminReason || "Demande refusée", req.params.id],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Create notification for user
+          const notifId = generateId();
+          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            notifId,
+            request.userId,
+            "Changement d'institution refusé",
+            `Votre demande de changement vers ${
+              request.requestedInstitution
+            } a été refusée. Raison: ${adminReason || "Non spécifiée"}`,
+            new Date().toISOString(),
+            0,
+            "error",
+          ]);
+
+          res.json({ message: "Request rejected" });
+        }
+      );
+    }
+  );
+});

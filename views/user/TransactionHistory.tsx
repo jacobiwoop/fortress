@@ -140,9 +140,9 @@ export const TransactionHistory: React.FC = () => {
                                         </div>
                                         
                                         <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                                            <span>{new Date(tx.date).toLocaleDateString()}</span>
+                                            <span>{tx.date && !isNaN(new Date(tx.date).getTime()) ? new Date(tx.date).toLocaleDateString() : 'N/A'}</span>
                                             <span>•</span>
-                                            <span>{new Date(tx.date).toLocaleTimeString()}</span>
+                                            <span>{tx.date && !isNaN(new Date(tx.date).getTime()) ? new Date(tx.date).toLocaleTimeString() : 'N/A'}</span>
                                             <span>•</span>
                                             <span className="bg-zinc-800 px-2 py-0.5 rounded">{tx.type}</span>
                                             {tx.counterparty && (

@@ -104,6 +104,19 @@ db.serialize(() => {
         FOREIGN KEY(userId) REFERENCES users(id)
     )`);
 
+  // Institution change requests table
+  db.run(`CREATE TABLE IF NOT EXISTS institution_change_requests (
+        id TEXT PRIMARY KEY,
+        userId TEXT,
+        userName TEXT,
+        currentInstitution TEXT,
+        requestedInstitution TEXT,
+        status TEXT,
+        requestDate TEXT,
+        adminReason TEXT,
+        FOREIGN KEY(userId) REFERENCES users(id)
+    )`);
+
   // Beneficiaries table
   db.run(`CREATE TABLE IF NOT EXISTS beneficiaries (
         id TEXT PRIMARY KEY,

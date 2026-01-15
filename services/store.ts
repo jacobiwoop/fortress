@@ -637,6 +637,51 @@ class BankingStore {
       }
   }
 
+  // --- INSTITUTION CHANGE REQUESTS ---
+  
+  async requestInstitutionChange(userId: string, requestedInstitution: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, requestedInstitution })
+      });
+      
+      if (!res.ok) throw new Error('Failed to create institution change request');
+      return await res.json();
+  }
+
+  async getInstitutionChangeRequests(userId?: string) {
+      const url = userId 
+          ? `${API_URL}/institution-change-requests/user/${userId}`
+          : `${API_URL}/institution-change-requests`;
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch institution change requests');
+      return await res.json();
+  }
+
+  async approveInstitutionChange(requestId: string, adminReason?: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests/${requestId}/approve`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminReason })
+      });
+      
+      if (!res.ok) throw new Error('Failed to approve institution change request');
+      return await res.json();
+  }
+
+  async rejectInstitutionChange(requestId: string, adminReason: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests/${requestId}/reject`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminReason })
+      });
+      
+      if (!res.ok) throw new Error('Failed to reject institution change request');
+      return await res.json();
+  }
+
   async createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error') {
      await fetch(`${API_URL}/notifications`, {
          method: 'POST',

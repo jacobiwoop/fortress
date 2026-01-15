@@ -99,6 +99,17 @@ export interface DocumentRequest {
   userName?: string; // For admin view
 }
 
+export interface InstitutionChangeRequest {
+  id: string;
+  userId: string;
+  userName?: string;
+  currentInstitution: string;
+  requestedInstitution: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestDate: string;
+  adminReason?: string;
+}
+
 export interface SiteConfig {
   id: number;
   name: string;

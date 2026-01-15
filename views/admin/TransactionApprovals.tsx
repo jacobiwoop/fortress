@@ -11,6 +11,9 @@ export const TransactionApprovals: React.FC = () => {
     const [paymentMessages, setPaymentMessages] = useState<Record<string, string>>({});
 
     useEffect(() => {
+        // Fetch all users (which includes their transactions)
+        store.fetchUsers();
+        
         setPendingTxs(store.getPendingTransactions());
         const unsub = store.subscribe(() => {
             setPendingTxs(store.getPendingTransactions());
