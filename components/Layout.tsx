@@ -104,7 +104,7 @@ export const Layout: React.FC = () => {
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-200 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
+        lg:relative lg:translate-x-0
       `}>
           {/* ... Desktop Sidebar Content Same as Before ... */}
          <div className="flex items-center h-16 px-6 border-b border-zinc-800">

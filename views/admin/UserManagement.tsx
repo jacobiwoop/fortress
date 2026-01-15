@@ -139,34 +139,34 @@ export const UserManagement: React.FC = () => {
     <div className="space-y-6 animate-fade-in relative">
       {showCreateForm && renderCreateUserForm()}
       
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-white">{store.t('users.title')}</h2>
-        <div className="flex gap-4">
-            <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                 <input 
                     type="text" 
                     placeholder={store.t('users.search')} 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="bg-zinc-900 border border-zinc-800 text-white pl-10 pr-4 py-2 rounded-lg focus:border-brand-yellow focus:outline-none w-64"
+                    className="bg-zinc-900 border border-zinc-800 text-white pl-10 pr-4 py-2 rounded-lg focus:border-brand-yellow focus:outline-none w-full sm:w-64"
                 />
             </div>
             <button 
                 onClick={() => setShowCreateForm(true)}
-                className="bg-brand-yellow text-black px-4 py-2 rounded-lg font-medium hover:bg-yellow-400 transition-colors"
+                className="bg-brand-yellow text-black px-4 py-2 rounded-lg font-medium hover:bg-yellow-400 transition-colors whitespace-nowrap"
             >
                 + Create User
             </button>
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm text-zinc-400">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-x-auto">
+        <table className="w-full text-left text-sm text-zinc-400 min-w-[600px]">
             <thead className="bg-zinc-950 text-zinc-200 border-b border-zinc-800">
                 <tr>
                     <th className="p-4">{store.t('users.col.name')}</th>
-                    <th className="p-4">{store.t('users.col.email')}</th>
+                    <th className="p-4 hidden sm:table-cell">{store.t('users.col.email')}</th>
                     <th className="p-4">{store.t('users.col.balance')}</th>
                     <th className="p-4">{store.t('users.col.status')}</th>
                 </tr>
@@ -178,13 +178,18 @@ export const UserManagement: React.FC = () => {
                         onClick={() => setSelectedUser(user)}
                         className="border-b border-zinc-800/50 hover:bg-zinc-800/40 cursor-pointer transition-colors"
                     >
-                        <td className="p-4 font-medium text-white flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
-                                {user.name.charAt(0)}
+                        <td className="p-4 font-medium text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
+                                    {user.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div>{user.name}</div>
+                                    <div className="text-xs text-zinc-500 sm:hidden">{user.email}</div>
+                                </div>
                             </div>
-                            {user.name}
                         </td>
-                        <td className="p-4">{user.email}</td>
+                        <td className="p-4 hidden sm:table-cell">{user.email}</td>
                         <td className="p-4 font-mono text-emerald-400">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user.balance)}</td>
                         <td className="p-4">
                             <StatusBadge status={user.status} />
