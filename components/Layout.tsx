@@ -130,7 +130,10 @@ export const Layout: React.FC = () => {
           {links.map((link) => (
             <button
               key={link.path}
-              onClick={() => navigate(link.path)}
+              onClick={() => {
+                navigate(link.path);
+                setIsMobileMenuOpen(false);
+              }}
               className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                 ${location.pathname === link.path 
@@ -142,6 +145,36 @@ export const Layout: React.FC = () => {
               {link.name}
             </button>
           ))}
+          
+          {/* Mobile Only: Profile and Logout */}
+          <div className="lg:hidden pt-4 mt-4 border-t border-zinc-800 space-y-1">
+            <button
+              onClick={() => {
+                navigate('/profile');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                ${location.pathname === '/profile' 
+                  ? 'bg-brand-yellow text-black' 
+                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}
+              `}
+            >
+              <User size={20} />
+              Profile
+            </button>
+            
+            <button
+              onClick={() => {
+                handleLogout();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-950/30 rounded-lg transition-colors"
+            >
+              <LogOut size={20} />
+              {store.t('nav.signout')}
+            </button>
+          </div>
         </nav>
 
         <div className="absolute bottom-0 w-full p-4 border-t border-zinc-800 space-y-2">
@@ -247,35 +280,17 @@ export const Layout: React.FC = () => {
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 lg:hidden z-50 pb-safe">
-        <div className="flex overflow-x-auto items-center h-16 px-2">
-          {links.map((link) => (
+        <div className="flex justify-around items-center h-16">
+          {links.slice(0, 5).map((link) => (
              <button
                key={link.path}
                onClick={() => navigate(link.path)}
-               className={`flex flex-col items-center gap-1 min-w-[70px] h-full justify-center ${location.pathname === link.path ? 'text-brand-yellow' : 'text-zinc-500'}`}
+               className={`flex flex-col items-center gap-1 w-full h-full justify-center ${location.pathname === link.path ? 'text-brand-yellow' : 'text-zinc-500'}`}
              >
-               {React.cloneElement(link.icon as React.ReactElement, { size: 22 })}
-               <span className="text-[9px] font-medium truncate max-w-[65px]">{link.name}</span>
+               {React.cloneElement(link.icon as React.ReactElement, { size: 24 })}
+               <span className="text-[10px] font-medium">{link.name}</span>
              </button>
           ))}
-          
-          {/* Profile Button */}
-          <button
-            onClick={() => navigate('/profile')}
-            className={`flex flex-col items-center gap-1 min-w-[70px] h-full justify-center ${location.pathname === '/profile' ? 'text-brand-yellow' : 'text-zinc-500'}`}
-          >
-            <User size={22} />
-            <span className="text-[9px] font-medium">Profile</span>
-          </button>
-          
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center gap-1 min-w-[70px] h-full justify-center text-red-400"
-          >
-            <LogOut size={22} />
-            <span className="text-[9px] font-medium">{store.t('nav.signout')}</span>
-          </button>
         </div>
       </div>
     </div>
