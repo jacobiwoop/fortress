@@ -546,6 +546,15 @@ class BankingStore {
        if (res.ok) await this.fetchUsers();
   }
 
+  async adminSetBalance(targetUserId: string, newBalance: number) {
+      const res = await fetch(`${API_URL}/users/${targetUserId}/set-balance`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: newBalance })
+     });
+     if (res.ok) await this.fetchUsers();
+  }
+
   async updateUserStatus(adminId: string, targetUserId: string, status: AccountStatus) {
        const res = await fetch(`${API_URL}/users/${targetUserId}/status`, {
            method: 'PATCH',

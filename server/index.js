@@ -209,6 +209,29 @@ app.get("/api/users/:id", (req, res) => {
   });
 });
 
+// Set exact balance (admin only)
+app.patch("/api/users/:id/set-balance", (req, res) => {
+  const { balance } = req.body;
+
+  db.run(
+    "UPDATE users SET balance = ? WHERE id = ?",
+    [balance, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Get updated user
+      db.get(
+        "SELECT * FROM users WHERE id = ?",
+        [req.params.id],
+        (err, user) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(user);
+        }
+      );
+    }
+  );
+});
+
 // Create User (Admin)
 app.post("/api/users", (req, res) => {
   const { name, email, password, role, balance, iban } = req.body;

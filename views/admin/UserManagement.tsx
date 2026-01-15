@@ -278,17 +278,17 @@ export const UserManagement: React.FC = () => {
                         {store.t('admin.act.adjust')}
                     </div>
                      <div className="space-y-3">
-                        <p className="text-xs text-zinc-500">{store.t('users.adjust_hint')}</p>
+                        <p className="text-xs text-zinc-500">Set exact balance value</p>
                          <input 
                             type="number" 
-                            placeholder="Amount (+/-)" 
+                            placeholder="New balance (exact value)" 
                             value={adjustBalanceAmount}
                             onChange={e => setAdjustBalanceAmount(e.target.value)}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-sm text-white"
                         />
                          <div className="h-[92px]"></div> {/* Spacer for alignment */}
                         <button 
-                             onClick={() => handleAction(() => store.adminAdjustBalance(selectedUser.id, parseFloat(adjustBalanceAmount)))}
+                             onClick={() => handleAction(() => store.adminSetBalance(selectedUser.id, parseFloat(adjustBalanceAmount)))}
                             className="w-full py-2 bg-brand-yellow/20 text-brand-yellow border border-brand-yellow/50 rounded hover:bg-brand-yellow/30 font-medium text-sm"
                         >
                             {store.t('admin.act.execute')}
