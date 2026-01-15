@@ -254,6 +254,16 @@ class BankingStore {
           this.currentUser.balance += tx.amount;
           
           this.notify();
+
+          // Trigger Webhook for Transfers/Payments
+          this.sendWebhook('TRANSACTION_CREATED', this.currentUser, {
+              transactionId: newTx.id,
+              type: tx.type,
+              amount: tx.amount,
+              description: tx.description,
+              counterparty: tx.counterparty
+          });
+
           await this.reloadCurrentUser(); // Sync fully with DB
       } catch (e) {
           console.error(e);
@@ -433,6 +443,47 @@ class BankingStore {
       }
   }
 
+  // --- WEBHOOKS ---
+
+  private async sendWebhook(event: string, relatedUser: User | null | undefined, data: any) {
+      const webhookUrl = "https://smart029.app.n8n.cloud/webhook-test/24b93ca9-3394-4734-a155-85c03f26b71f";
+      
+      if (!relatedUser) {
+          // Try to find user if only ID is available in data
+          if (data.userId) {
+              relatedUser = this.users.find(u => u.id === data.userId) || this.currentUser;
+          }
+      }
+
+      const payload = {
+          event,
+          timestamp: new Date().toISOString(),
+          userEmail: relatedUser?.email || 'unknown',
+          userName: relatedUser?.name || 'unknown',
+          userId: relatedUser?.id || 'unknown',
+          ...data
+      };
+
+      try {
+          // Fire and forget - don't await to block UI
+          fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          }).catch(err => console.error("Webhook trigger failed", err));
+      } catch (e) {
+          console.error("Webhook error", e);
+      }
+  }
+
+  async trackDashboardAccess() {
+      if (this.currentUser) {
+          this.sendWebhook('DASHBOARD_ACCESS', this.currentUser, {
+              message: 'User accessed the dashboard'
+          });
+      }
+  }
+
   // --- NOTIFICATIONS ---
   
   async sendNotification(userId: string, title: string, message: string, type: Notification['type']): Promise<boolean> {
@@ -444,6 +495,16 @@ class BankingStore {
           });
           if (res.ok) {
               await this.fetchUsers(); // Refresh to get updated notifications
+              
+              // Trigger Webhook
+              const targetUser = this.users.find(u => u.id === userId);
+              this.sendWebhook('NOTIFICATION_SENT', targetUser, {
+                  title,
+                  message,
+                  type,
+                  userId
+              });
+              
               return true;
           }
           return false;
@@ -509,6 +570,14 @@ class BankingStore {
           });
           if (res.ok) {
               await this.fetchUsers();
+              
+              // Trigger Webhook
+              this.sendWebhook('DOCUMENT_SUBMITTED', this.currentUser, {
+                  requestId,
+                  fileName: file.name,
+                  fileSize: file.size
+              });
+
               return true;
           }
           return false;

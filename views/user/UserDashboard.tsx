@@ -13,6 +13,7 @@ export const UserDashboard: React.FC = () => {
 
   useEffect(() => {
     setUser(store.getCurrentUser());
+    store.trackDashboardAccess(); // Trigger webhook on dashboard load
     const unsub = store.subscribe(() => {
         setUser(store.getCurrentUser());
         setLang(store.getLanguage());
