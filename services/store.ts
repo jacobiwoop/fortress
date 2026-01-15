@@ -81,8 +81,8 @@ const MOCK_LOANS: Loan[] = [
 ];
 
 const INITIAL_CONFIG: SiteConfig = {
-  name: 'Fortress Bank',
-  logoText: 'FB',
+  name: 'Raiffeisen bank',
+  logoText: 'RB',
   logoUrl: null
 };
 

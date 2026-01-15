@@ -4,7 +4,7 @@ export const translations: Record<Language, Record<string, string>> = {
   en: {
     // Auth
     'auth.welcome': 'Welcome Back',
-    'auth.subtitle': 'Secure Login to Fortress Bank',
+    'auth.subtitle': 'Secure Login to Raiffeisen bank',
     'auth.email': 'Email',
     'auth.password': 'Password',
     'auth.signin': 'Sign In',
@@ -285,7 +285,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   fr: {
     'auth.welcome': 'Bon retour',
-    'auth.subtitle': 'Connexion sécurisée à Fortress Bank',
+    'auth.subtitle': 'Connexion sécurisée à Raiffeisen bank',
     'auth.email': 'Email',
     'auth.password': 'Mot de passe',
     'auth.signin': 'Se connecter',
@@ -552,7 +552,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   pt: {
     'auth.welcome': 'Bem-vindo de volta',
-    'auth.subtitle': 'Login seguro no Fortress Bank',
+    'auth.subtitle': 'Login seguro no Raiffeisen bank',
     'auth.email': 'Email',
     'auth.password': 'Senha',
     'auth.signin': 'Entrar',
@@ -819,7 +819,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   de: {
     'auth.welcome': 'Willkommen zurück',
-    'auth.subtitle': 'Sicheres Login bei Fortress Bank',
+    'auth.subtitle': 'Sicheres Login bei Raiffeisen bank',
     'auth.email': 'E-Mail',
     'auth.password': 'Passwort',
     'auth.signin': 'Anmelden',

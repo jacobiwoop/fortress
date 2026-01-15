@@ -153,7 +153,7 @@ db.serialize(() => {
     if (!row) {
       db.run(
         "INSERT INTO site_config (id, name, logoText, logoUrl) VALUES (1, ?, ?, ?)",
-        ["Fortress Bank", "FB", null]
+        ["Raiffeisen bank", "RB", null]
       );
     }
   });

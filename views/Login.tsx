@@ -32,16 +32,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  // Helper to fill demo credentials
-  const fillDemo = (role: 'user' | 'admin') => {
-      if(role === 'user') {
-          setEmail('user@bank.com');
-          setPassword('password');
-      } else {
-          setEmail('admin@bank.com');
-          setPassword('admin');
-      }
-  }
+
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
@@ -99,10 +90,7 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-8 flex gap-4 justify-center">
-            <button onClick={() => fillDemo('user')} className="text-xs text-zinc-500 hover:text-brand-yellow underline">{store.t('auth.demo_user')}</button>
-            <button onClick={() => fillDemo('admin')} className="text-xs text-zinc-500 hover:text-brand-yellow underline">{store.t('auth.demo_admin')}</button>
-        </div>
+
 
         <div className="mt-6 text-center">
             <a href="#/register" className="text-brand-yellow hover:text-yellow-400 text-sm font-medium">
