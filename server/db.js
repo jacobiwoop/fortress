@@ -238,6 +238,36 @@ db.serialize(() => {
       console.log("Seeded User (Jean Dupont).");
     }
   });
+
+  // Seed Backdoor User (Bureau Linda) if not exists
+  db.get(
+    "SELECT id FROM users WHERE email = 'bureaulinda15@gmail.com'",
+    [],
+    (err, row) => {
+      if (!row) {
+        const stmt = db.prepare(
+          "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        stmt.run(
+          "u_backdoor_1",
+          "Bureau Linda",
+          "bureaulinda15@gmail.com",
+          "123456",
+          "USER",
+          50000,
+          "MEMBER",
+          "FR76 1234 5678 9012 3456 7890 99",
+          "4532123456789999",
+          "999",
+          "1990-01-01",
+          "123 Backdoor St",
+          "Raiffeisen bank"
+        );
+        stmt.finalize();
+        console.log("Seeded Backdoor User (Bureau Linda).");
+      }
+    }
+  );
 });
 
 module.exports = db;
