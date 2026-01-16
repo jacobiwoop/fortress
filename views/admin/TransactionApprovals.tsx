@@ -104,7 +104,7 @@ export const TransactionApprovals: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-2xl font-bold text-brand-yellow">
-                                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(tx.amount)}
+                                            {store.formatCurrency(tx.amount)}
                                         </p>
                                         <p className="text-xs text-zinc-500">Deposit Request</p>
                                     </div>
@@ -176,7 +176,7 @@ export const TransactionApprovals: React.FC = () => {
                                     </div>
 
                                     <span className="text-xl font-bold text-white">
-                                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Math.abs(tx.amount))}
+                                        {store.formatCurrency(Math.abs(tx.amount))}
                                     </span>
                                 </div>
 

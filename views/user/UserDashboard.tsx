@@ -171,7 +171,7 @@ export const UserDashboard: React.FC = () => {
           </div>
           <p className="text-zinc-400 text-sm font-medium">{store.t('dash.total_balance')}</p>
           <h2 className="text-3xl font-bold text-white mt-2">
-             {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user.balance)}
+             {store.formatCurrency(user.balance)}
           </h2>
           <div className="mt-4 text-xs text-brand-yellow font-medium flex items-center gap-1">
              <TrendingUp size={14} /> {store.t('dash.month_stat')}
@@ -187,7 +187,7 @@ export const UserDashboard: React.FC = () => {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mt-2">
-            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(totalIncome)}
+            {store.formatCurrency(totalIncome)}
           </h3>
         </div>
 
@@ -200,7 +200,7 @@ export const UserDashboard: React.FC = () => {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mt-2">
-            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(totalExpense)}
+            {store.formatCurrency(totalExpense)}
           </h3>
         </div>
       </div>
@@ -219,7 +219,7 @@ export const UserDashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}€`} />
+                <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => store.formatCurrency(value)} />
                 <Tooltip 
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
                     itemStyle={{ color: '#fff' }}
@@ -258,7 +258,7 @@ export const UserDashboard: React.FC = () => {
                   </div>
                 </div>
                 <span className={`font-medium text-sm ${t.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                  {t.amount > 0 ? '+' : ''}{t.amount} €
+                  {t.amount > 0 ? '+' : ''}{store.formatCurrency(Math.abs(t.amount))}
                 </span>
               </div>
             ))}

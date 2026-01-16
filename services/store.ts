@@ -159,6 +159,14 @@ class BankingStore {
       return this.config;
   }
 
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('fr-CA', { 
+        style: 'currency', 
+        currency: 'CAD',
+        currencyDisplay: 'symbol'
+    }).format(amount);
+  }
+
   async fetchConfig() {
       try {
           const res = await fetch(`${API_URL}/settings`);

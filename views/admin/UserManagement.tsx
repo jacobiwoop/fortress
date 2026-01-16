@@ -190,7 +190,7 @@ export const UserManagement: React.FC = () => {
                             </div>
                         </td>
                         <td className="p-4 hidden sm:table-cell">{user.email}</td>
-                        <td className="p-4 font-mono text-emerald-400">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user.balance)}</td>
+                        <td className="p-4 font-mono text-emerald-400">{store.formatCurrency(user.balance)}</td>
                         <td className="p-4">
                             <StatusBadge status={user.status} />
                         </td>
@@ -224,7 +224,7 @@ export const UserManagement: React.FC = () => {
                 <div className="ml-auto text-right">
                      <p className="text-zinc-500 text-sm">Balance</p>
                      <p className="text-3xl font-bold text-brand-yellow font-mono">
-                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(selectedUser.balance)}
+                        {store.formatCurrency(selectedUser.balance)}
                      </p>
                 </div>
             </div>
@@ -402,7 +402,7 @@ export const UserManagement: React.FC = () => {
                                     <td className="p-3 text-white">{t.description}</td>
                                     <td className="p-3 text-xs">{t.type}</td>
                                     <td className={`p-3 text-right font-medium ${t.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                                        {t.amount > 0 ? '+' : ''}{t.amount} €
+                                        {t.amount > 0 ? '+' : ''}{store.formatCurrency(Math.abs(t.amount))}
                                     </td>
                                 </tr>
                             ))}

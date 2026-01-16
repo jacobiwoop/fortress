@@ -171,7 +171,7 @@ export const TransactionHistory: React.FC = () => {
 
                                 <div className="text-right shrink-0">
                                     <p className={`text-lg font-bold ${tx.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                        {tx.amount >= 0 ? '+' : ''}{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(tx.amount)}
+                                        {tx.amount >= 0 ? '+' : ''}{store.formatCurrency(tx.amount)}
                                     </p>
                                 </div>
                             </div>
