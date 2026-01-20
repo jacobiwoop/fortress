@@ -96,35 +96,37 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans">
+    <div className="flex h-screen bg-brand-light text-brand-navy overflow-hidden font-sans">
       
       {/* Mobile Menu Overlay for Sidebar (Optional now with Bottom Nav but kept for consistency) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/80 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       {/* Sidebar (Desktop Hidden on Mobile except if toggled, but we use Bottom Nav for main) */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 transform transition-transform duration-200 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
       `}>
           {/* ... Desktop Sidebar Content Same as Before ... */}
-         <div className="flex items-center h-16 px-6 border-b border-zinc-800">
-          <div className="flex items-center gap-2">
-            {config.logoUrl ? (
-              <img src={config.logoUrl} alt={config.name} className="w-8 h-8 object-contain" />
-            ) : (
-              <div className="w-8 h-8 rounded bg-brand-yellow flex items-center justify-center text-black font-bold text-xl">
-                {config.logoText}
-              </div>
-            )}
-            <span className="text-lg font-bold tracking-tight text-white">{config.name}</span>
+         <div className="flex items-center h-20 px-6 border-b border-gray-100">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+             {config.logoUrl ? (
+                <img src={config.logoUrl} alt={config.name} className="h-8 w-auto" />
+             ) : (
+             <div className="text-brand-blue font-extrabold text-2xl tracking-tighter flex items-center gap-1">
+                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-brand-blue">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-2 1L12 15.5l7-3.5-2-1-5 2.5z"/>
+                </svg>
+                <span>{config.logoText || config.name}</span>
+             </div>
+             )}
           </div>
         </div>
 
         <nav className="p-4 space-y-1">
-          <div className="px-2 pb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+          <div className="px-2 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
             {isAdmin ? store.t('nav.admin') : store.t('nav.menu')}
           </div>
           {links.map((link) => (
@@ -135,10 +137,10 @@ export const Layout: React.FC = () => {
                 setIsMobileMenuOpen(false);
               }}
               className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-200
                 ${location.pathname === link.path 
-                  ? 'bg-brand-yellow text-black' 
-                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}
+                  ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/30' 
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-brand-navy'}
               `}
             >
               {link.icon}
@@ -147,17 +149,17 @@ export const Layout: React.FC = () => {
           ))}
           
           {/* Mobile Only: Profile and Logout */}
-          <div className="lg:hidden pt-4 mt-4 border-t border-zinc-800 space-y-1">
+          <div className="lg:hidden pt-4 mt-4 border-t border-gray-100 space-y-1">
             <button
               onClick={() => {
                 navigate('/profile');
                 setIsMobileMenuOpen(false);
               }}
               className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-colors
                 ${location.pathname === '/profile' 
-                  ? 'bg-brand-yellow text-black' 
-                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}
+                  ? 'bg-brand-blue text-white' 
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-brand-navy'}
               `}
             >
               <User size={20} />
@@ -169,7 +171,7 @@ export const Layout: React.FC = () => {
                 handleLogout();
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-950/30 rounded-lg transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors"
             >
               <LogOut size={20} />
               {store.t('nav.signout')}
@@ -177,43 +179,36 @@ export const Layout: React.FC = () => {
           </div>
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t border-zinc-800 space-y-2">
+        <div className="absolute bottom-0 w-full p-6 border-t border-gray-100 space-y-2 bg-white">
             <div 
                 onClick={() => navigate('/profile')}
-                className="flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer hover:bg-zinc-900 transition-colors group"
+                className="flex items-center gap-3 px-2 py-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors group"
             >
-                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold group-hover:bg-zinc-700">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-brand-navy group-hover:bg-brand-blue group-hover:text-white transition-colors">
                     {currentUser.name.charAt(0)}
                 </div>
                 <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-white truncate">{currentUser.name}</p>
+                    <p className="text-sm font-bold text-brand-navy truncate">{currentUser.name}</p>
+                    <p className="text-xs text-gray-500">View Profile</p>
                 </div>
             </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-950/30 rounded-lg transition-colors"
-          >
-            <LogOut size={20} />
-            {store.t('nav.signout')}
-          </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-brand-light">
         {/* Top Header */}
-        <header className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+        <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors text-brand-navy"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             
-            <h1 className="text-xl font-bold text-white hidden md:block">
+            <h1 className="text-xl font-extrabold text-brand-navy hidden md:block tracking-tight">
               {config.name}
             </h1>
           </div>
@@ -223,12 +218,12 @@ export const Layout: React.FC = () => {
             {!isAdmin && (
               <button
                 onClick={() => navigate('/notifications')}
-                className="relative p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
                 title="Notifications"
               >
-                <Bell size={20} className="text-zinc-400" />
+                <Bell size={20} className="text-gray-400 hover:text-brand-blue transition-colors" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -239,7 +234,7 @@ export const Layout: React.FC = () => {
             <select
               value={currentLang}
               onChange={handleLangChange}
-              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-yellow"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-brand-navy font-bold focus:outline-none focus:border-brand-blue cursor-pointer hover:bg-gray-100 transition-colors"
             >
               <option value="en">🇬🇧 EN</option>
               <option value="fr">🇫🇷 FR</option>
@@ -250,12 +245,12 @@ export const Layout: React.FC = () => {
             {/* User Info */}
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">{currentUser.name}</p>
-                <p className="text-xs text-zinc-500">{isAdmin ? 'Administrator' : 'User'}</p>
+                <p className="text-sm font-bold text-brand-navy">{currentUser.name}</p>
+                <p className="text-xs text-gray-400 font-medium">{isAdmin ? 'Administrator' : 'User'}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                className="p-2 hover:bg-red-50 rounded-full transition-colors text-gray-400 hover:text-red-500"
                 title={store.t('nav.logout')}
               >
                 <LogOut size={20} />
@@ -266,7 +261,9 @@ export const Layout: React.FC = () => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-6 pb-28 lg:pb-6">
-          <Outlet />
+          <div className="max-w-6xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
 
@@ -279,16 +276,16 @@ export const Layout: React.FC = () => {
       )}
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 lg:hidden z-50 pb-safe">
-        <div className="flex justify-around items-center h-16">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 lg:hidden z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex justify-around items-center h-20">
           {links.slice(0, 5).map((link) => (
              <button
                key={link.path}
                onClick={() => navigate(link.path)}
-               className={`flex flex-col items-center gap-1 w-full h-full justify-center ${location.pathname === link.path ? 'text-brand-yellow' : 'text-zinc-500'}`}
+               className={`flex flex-col items-center gap-1 w-full h-full justify-center transition-colors ${location.pathname === link.path ? 'text-brand-blue' : 'text-gray-400 hover:text-brand-navy'}`}
              >
-               {React.cloneElement(link.icon as React.ReactElement, { size: 24 })}
-               <span className="text-[10px] font-medium">{link.name}</span>
+               {React.cloneElement(link.icon as React.ReactElement, { size: 24, strokeWidth: location.pathname === link.path ? 2.5 : 2 })}
+               <span className="text-[10px] font-bold">{link.name}</span>
              </button>
           ))}
         </div>

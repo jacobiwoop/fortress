@@ -1,23 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Raiffeisen bank</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ["Figtree", "sans-serif"],
+            },
             colors: {
               brand: {
-                yellow: "#FFE600", // Raiffeisen Yellow
-                black: "#09090b", // zinc-950
-                darkgreen: "#064e3b", // emerald-900
-                green: "#10b981", // emerald-500
-                white: "#fafafa", // zinc-50
-                beige: "#F4F0E6", // Brand Beige
+                blue: "#009FFF", // Shakepay Blue
+                navy: "#002237", // Shakepay Dark Navy
+                dark: "#002237",
+                light: "#F5F7F9", // Light Grey Background
+                white: "#FFFFFF",
+                yellow: "#FFE600", // Keep for legacy/admin if needed, but primary is now Blue
               },
+            },
+            borderRadius: {
+              "4xl": "40px",
             },
           },
         },
@@ -38,6 +49,9 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #52525b;
       }
+      body {
+        font-family: "Figtree", sans-serif;
+      }
     </style>
     <script type="importmap">
       {
@@ -53,7 +67,7 @@
     </script>
     <link rel="stylesheet" href="/index.css" />
   </head>
-  <body class="bg-brand-black text-brand-white antialiased">
+  <body class="bg-white text-brand-navy antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

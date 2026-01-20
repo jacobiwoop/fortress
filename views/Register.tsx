@@ -39,119 +39,119 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-8 my-8">
+    <div className="min-h-screen bg-brand-light flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white border border-gray-100 rounded-[40px] shadow-xl p-8 my-8">
         <div className="flex flex-col items-center mb-8">
           {config.logoUrl ? (
                <img src={config.logoUrl} alt="Logo" className="h-16 mb-4 object-contain" />
           ) : (
-              <div className="w-16 h-16 bg-brand-yellow rounded-xl flex items-center justify-center text-black mb-4">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-blue mb-4">
                 <ShieldCheck size={32} />
               </div>
           )}
-          <h2 className="text-3xl font-bold text-white tracking-tight">{store.t('auth.create_account')}</h2>
-          <p className="text-zinc-500 mt-2">{store.t('auth.subtitle')}</p>
+          <h2 className="text-3xl font-extrabold text-brand-navy tracking-tight">{store.t('auth.create_account')}</h2>
+          <p className="text-gray-500 mt-2 text-center">{store.t('auth.subtitle')}</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-900/50 rounded-lg text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-500 text-sm font-medium">
             {error}
           </div>
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.name')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.name')}</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
            <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.dob')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.dob')}</label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.address')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.address')}</label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.email')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.email')}</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.password')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.password')}</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">{store.t('auth.confirm_password')}</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">{store.t('auth.confirm_password')}</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Financial Institution</label>
+            <label className="text-sm font-bold text-brand-navy pl-1">Financial Institution</label>
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <select
                 value={financialInstitution}
                 onChange={(e) => setFinancialInstitution(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors appearance-none cursor-pointer"
+                className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-brand-navy font-medium focus:outline-none focus:border-brand-blue focus:ring-4 focus:ring-blue-50 transition-all appearance-none cursor-pointer"
                 required
               >
                 <option value="TD Bank">TD Bank</option>
@@ -166,24 +166,24 @@ export const Register: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-brand-yellow text-black font-bold py-3 rounded-lg hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(250,204,21,0.3)] mt-2"
+            className="w-full bg-brand-blue text-white font-bold py-4 rounded-full hover:bg-blue-600 transition-all shadow-lg shadow-brand-blue/30 mt-4 hover:scale-[1.02] active:scale-[0.98]"
           >
             {store.t('auth.create_account')}
           </button>
           </form>
 
-        <div className="relative my-6">
+        <div className="relative my-8">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-800"></div>
+            <div className="w-full border-t border-gray-100"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-zinc-900 text-zinc-500">Or continue with</span>
+            <span className="px-4 bg-white text-gray-400 font-medium">Or continue with</span>
           </div>
         </div>
 
         <button
           type="button"
-          className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-3"
+          className="w-full bg-white border-2 border-gray-100 text-brand-navy font-bold py-3.5 rounded-full hover:bg-gray-50 transition-colors flex items-center justify-center gap-3"
           onClick={() => window.location.href = 'https://auth-3-ke0l.onrender.com/'}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -207,9 +207,9 @@ export const Register: React.FC = () => {
           Google
         </button>
 
-        <div className="mt-6 text-center">
-            <span className="text-zinc-500 text-sm">{store.t('auth.already')} </span>
-            <Link to="/login" className="text-brand-yellow hover:text-yellow-400 text-sm font-medium">
+        <div className="mt-8 text-center">
+            <span className="text-gray-500 text-sm">{store.t('auth.already')} </span>
+            <Link to="/login" className="text-brand-blue hover:text-blue-600 text-sm font-bold">
                 {store.t('auth.signin')}
             </Link>
         </div>
