@@ -46,41 +46,41 @@ export const Loans: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Request Form */}
       <div>
-         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-brand-yellow/10 rounded-full text-brand-yellow">
-                    <CircleDollarSign size={24} />
+         <div className="bg-white border border-gray-100 rounded-[30px] p-8 shadow-sm">
+            <div className="flex items-center gap-4 mb-8">
+                <div className="p-4 bg-blue-50 rounded-2xl text-brand-blue">
+                    <CircleDollarSign size={28} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-white">{store.t('loans.title')}</h2>
-                    <p className="text-sm text-zinc-400">{store.t('loans.subtitle')}</p>
+                    <h2 className="text-2xl font-extrabold text-brand-navy">{store.t('loans.title')}</h2>
+                    <p className="text-sm text-gray-400 font-bold">{store.t('loans.subtitle')}</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-1">{store.t('loans.amount_needed')}</label>
+                    <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('loans.amount_needed')}</label>
                     <input 
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 text-white focus:border-brand-yellow focus:outline-none"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                         placeholder="e.g. 5000"
                         min="100"
                         required
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-1">{store.t('loans.reason')}</label>
+                    <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('loans.reason')}</label>
                     <textarea 
                         value={purpose}
                         onChange={(e) => setPurpose(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded p-3 text-white focus:border-brand-yellow focus:outline-none h-24 resize-none"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400 h-32 resize-none"
                         placeholder="..."
                         required
                     />
                 </div>
-                <button className="w-full py-3 bg-brand-yellow text-black font-bold rounded hover:bg-yellow-400 transition-colors">
+                <button className="w-full py-4 bg-brand-blue text-white font-bold rounded-full hover:bg-blue-600 transition-colors shadow-lg shadow-brand-blue/30 mt-2">
                     {store.t('loans.submit')}
                 </button>
             </form>
@@ -88,28 +88,32 @@ export const Loans: React.FC = () => {
       </div>
 
       {/* History */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white">{store.t('loans.history')}</h3>
+      <div className="space-y-6">
+        <h3 className="text-xl font-extrabold text-brand-navy pl-2">{store.t('loans.history')}</h3>
         {loans.length === 0 ? (
-            <p className="text-zinc-500 italic">{store.t('loans.no_history')}</p>
+            <div className="bg-white border border-gray-100 rounded-[30px] p-12 text-center text-gray-400">
+                <p className="font-bold italic">{store.t('loans.no_history')}</p>
+            </div>
         ) : (
-            loans.map(loan => (
-                <div key={loan.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-2">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-white font-semibold text-lg">{loan.amount} €</p>
-                            <p className="text-sm text-zinc-400">{loan.purpose}</p>
+            <div className="space-y-4">
+                {loans.map(loan => (
+                    <div key={loan.id} className="bg-white border border-gray-100 rounded-[24px] p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-brand-navy font-extrabold text-xl">{loan.amount} €</p>
+                                <p className="text-sm text-gray-500 font-medium">{loan.purpose}</p>
+                            </div>
+                            <StatusBadge status={loan.status} />
                         </div>
-                        <StatusBadge status={loan.status} />
+                        <div className="mt-2 pt-4 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400 font-bold">
+                            <span>{new Date(loan.requestDate).toLocaleDateString()}</span>
+                            {loan.adminReason && (
+                                <span className="text-brand-blue italic max-w-[200px] truncate">Note: {loan.adminReason}</span>
+                            )}
+                        </div>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-500">
-                        <span>{new Date(loan.requestDate).toLocaleDateString()}</span>
-                        {loan.adminReason && (
-                            <span className="text-zinc-300 italic max-w-[200px] truncate">Note: {loan.adminReason}</span>
-                        )}
-                    </div>
-                </div>
-            ))
+                ))}
+            </div>
         )}
       </div>
     </div>
@@ -119,10 +123,10 @@ export const Loans: React.FC = () => {
 const StatusBadge = ({ status }: { status: LoanStatus }) => {
     switch (status) {
         case LoanStatus.PENDING:
-            return <span className="flex items-center gap-1 px-2 py-1 bg-yellow-900/30 text-yellow-500 text-xs rounded border border-yellow-900/50"><Clock size={12}/> {store.t('loans.status.pending')}</span>;
+            return <span className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"><Clock size={14} strokeWidth={2.5}/> {store.t('loans.status.pending')}</span>;
         case LoanStatus.APPROVED:
-            return <span className="flex items-center gap-1 px-2 py-1 bg-emerald-900/30 text-emerald-500 text-xs rounded border border-emerald-900/50"><CheckCircle2 size={12}/> {store.t('loans.status.approved')}</span>;
+            return <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full"><CheckCircle2 size={14} strokeWidth={2.5}/> {store.t('loans.status.approved')}</span>;
         case LoanStatus.REJECTED:
-            return <span className="flex items-center gap-1 px-2 py-1 bg-red-900/30 text-red-500 text-xs rounded border border-red-900/50"><XCircle size={12}/> {store.t('loans.status.rejected')}</span>;
+            return <span className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-xs font-bold rounded-full"><XCircle size={14} strokeWidth={2.5}/> {store.t('loans.status.rejected')}</span>;
     }
 };

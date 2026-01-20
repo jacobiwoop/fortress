@@ -109,28 +109,28 @@ export const Transfers: React.FC = () => {
     <div className="max-w-2xl mx-auto space-y-8">
       
       {/* Stepper */}
-      <div className="flex items-center justify-between relative mb-8">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-800 -z-10"></div>
+      <div className="flex items-center justify-between relative mb-8 px-4">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-gray-200 -z-10"></div>
             {[1, 2, 3, 4].map(s => (
-                <div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-4 border-black ${step >= s ? 'bg-brand-yellow text-black' : 'bg-zinc-800 text-zinc-500'}`}>
-                    {step > s ? <CheckCircle size={18}/> : s}
+                <div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-4 ${step >= s ? 'bg-brand-blue border-brand-blue text-white shadow-lg shadow-brand-blue/30' : 'bg-white border-gray-200 text-gray-400'}`}>
+                    {step > s ? <CheckCircle size={18} strokeWidth={3} /> : s}
                 </div>
             ))}
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 shadow-xl">
-        <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">
+      <div className="bg-white border border-gray-100 rounded-[30px] p-8 shadow-xl shadow-brand-blue/5">
+        <div className="mb-8 text-center">
+            <h2 className="text-3xl font-extrabold text-brand-navy mb-2 tracking-tight">
                 {step === 1 && store.t('interac.step1')}
                 {step === 2 && store.t('interac.step2')}
                 {step === 3 && store.t('interac.step3')}
                 {step === 4 && store.t('interac.step4')}
             </h2>
-            <p className="text-zinc-400 text-sm">Step {step} of {totalSteps}</p>
+            <p className="text-gray-400 font-bold uppercase tracking-wider text-xs">Step {step} of {totalSteps}</p>
         </div>
 
         {msg && (
-            <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${msg.type === 'success' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-900/50' : 'bg-red-900/30 text-red-400 border border-red-900/50'}`}>
+            <div className={`mb-6 p-4 rounded-2xl text-sm font-bold ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>
             {msg.text}
             </div>
         )}
@@ -142,12 +142,12 @@ export const Transfers: React.FC = () => {
             {step === 1 && (
                 <>
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.recipient')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('transfer.recipient')}</label>
                         <div className="relative">
-                            <UserIcon className="absolute left-3 top-3.5 text-zinc-500" size={18} />
+                            <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input 
                                 type="text"
-                                className="w-full bg-black border border-zinc-800 rounded-lg py-3 pl-10 pr-4 text-white focus:border-brand-yellow focus:outline-none"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 pl-12 pr-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                                 placeholder="Name"
                                 value={recipientName}
                                 onChange={e => setRecipientName(e.target.value)}
@@ -156,21 +156,21 @@ export const Transfers: React.FC = () => {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.contact_info')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('interac.contact_info')}</label>
                         <input 
                             type="text"
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                             placeholder="email@example.com / 514-555-0199"
                             value={contactInfo}
                             onChange={e => setContactInfo(e.target.value)}
                         />
                     </div>
-                     <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${addToContacts ? 'bg-brand-yellow border-brand-yellow' : 'border-zinc-700 bg-zinc-800'}`}>
-                            {addToContacts && <CheckCircle size={14} className="text-black" />}
+                     <label className="flex items-center gap-3 cursor-pointer group p-2 hover:bg-gray-50 rounded-xl transition-colors">
+                        <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${addToContacts ? 'bg-brand-blue border-brand-blue shadow-lg shadow-brand-blue/30' : 'border-gray-300 bg-white'}`}>
+                            {addToContacts && <CheckCircle size={14} className="text-white" strokeWidth={3} />}
                         </div>
                         <input type="checkbox" className="hidden" checked={addToContacts} onChange={e => setAddToContacts(e.target.checked)} />
-                        <span className="text-sm text-zinc-400 group-hover:text-white transition-colors">{store.t('interac.add_contact')}</span>
+                        <span className="text-sm font-bold text-gray-500 group-hover:text-brand-navy transition-colors">{store.t('interac.add_contact')}</span>
                     </label>
                 </>
             )}
@@ -179,25 +179,25 @@ export const Transfers: React.FC = () => {
             {step === 2 && (
                 <>
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.amount')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('transfer.amount')}</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-zinc-500">€</span>
+                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-bold text-gray-400">€</span>
                             <input 
                                 type="number"
-                                className="w-full bg-black border border-zinc-800 rounded-lg py-4 pl-10 pr-4 text-white text-3xl font-bold focus:border-brand-yellow focus:outline-none"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-6 pl-14 pr-4 text-brand-navy text-4xl font-extrabold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-300"
                                 placeholder="0.00"
                                 value={amount}
                                 onChange={e => setAmount(e.target.value)}
                                 autoFocus
                             />
                         </div>
-                        <p className="text-right text-xs text-brand-yellow mt-2 font-medium">{store.t('interac.fees')}</p>
+                        <p className="text-right text-xs text-brand-blue mt-2 font-bold bg-blue-50 inline-block px-2 py-1 rounded-md float-right">{store.t('interac.fees')}</p>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('transfer.desc')}</label>
+                     <div className="clear-both pt-4">
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('transfer.desc')}</label>
                         <input 
                             type="text"
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                             placeholder="Optional message..."
                             value={description}
                             onChange={e => setDescription(e.target.value)}
@@ -209,18 +209,18 @@ export const Transfers: React.FC = () => {
             {/* Step 3: Security */}
             {step === 3 && (
                 <>
-                    <div className="p-4 bg-brand-yellow/10 border border-brand-yellow/20 rounded-lg flex items-start gap-3">
-                        <ShieldAlert className="text-brand-yellow shrink-0 mt-0.5" size={20} />
-                        <p className="text-sm text-brand-yellow/90 leading-relaxed font-medium">
+                    <div className="p-4 bg-blue-50 border border-brand-blue/20 rounded-2xl flex items-start gap-3 shadow-sm">
+                        <ShieldAlert className="text-brand-blue shrink-0 mt-0.5" size={24} />
+                        <p className="text-sm text-brand-navy leading-relaxed font-bold">
                             {store.t('interac.warning')}
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_q')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('interac.security_q')}</label>
                         <input 
                             type="text"
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                             placeholder="e.g. Name of my first pet?"
                             value={securityQuestion}
                             onChange={e => setSecurityQuestion(e.target.value)}
@@ -228,19 +228,19 @@ export const Transfers: React.FC = () => {
                         />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_a')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('interac.security_a')}</label>
                         <input 
                             type="password"
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                             value={securityAnswer}
                             onChange={e => setSecurityAnswer(e.target.value)}
                         />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">{store.t('interac.security_a_confirm')}</label>
+                        <label className="block text-sm font-bold text-brand-navy pl-1 mb-2">{store.t('interac.security_a_confirm')}</label>
                         <input 
                             type="password"
-                            className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-brand-navy font-bold focus:border-brand-blue focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-gray-400"
                             value={confirmAnswer}
                             onChange={e => setConfirmAnswer(e.target.value)}
                         />
@@ -251,21 +251,21 @@ export const Transfers: React.FC = () => {
             {/* Step 4: Summary */}
             {step === 4 && (
                 <div className="space-y-4">
-                    <div className="bg-black/50 rounded-xl p-4 space-y-4 border border-zinc-800">
-                        <div className="flex justify-between items-center py-2 border-b border-zinc-800">
-                            <span className="text-zinc-500">{store.t('interac.step1')}</span>
+                    <div className="bg-gray-50 rounded-3xl p-6 space-y-4 border border-gray-100">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="text-gray-500 font-bold">{store.t('interac.step1')}</span>
                             <div className="text-right">
-                                <p className="text-white font-medium">{recipientName}</p>
-                                <p className="text-xs text-zinc-500">{contactInfo}</p>
+                                <p className="text-brand-navy font-extrabold text-lg">{recipientName}</p>
+                                <p className="text-xs text-brand-blue font-bold">{contactInfo}</p>
                             </div>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-zinc-800">
-                            <span className="text-zinc-500">{store.t('interac.step2')}</span>
-                            <span className="text-xl font-bold text-white">€{amount}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="text-gray-500 font-bold">{store.t('interac.step2')}</span>
+                            <span className="text-2xl font-extrabold text-brand-navy">€{amount}</span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                             <span className="text-zinc-500">{store.t('interac.security_q')}</span>
-                             <span className="text-white text-sm italic">"{securityQuestion}"</span>
+                             <span className="text-gray-500 font-bold">{store.t('interac.security_q')}</span>
+                             <span className="text-brand-navy text-sm font-medium italic">"{securityQuestion}"</span>
                         </div>
                     </div>
                 </div>
@@ -276,25 +276,25 @@ export const Transfers: React.FC = () => {
                 {step > 1 && (
                     <button 
                         onClick={prevStep}
-                        className="flex-1 py-3 px-4 rounded-lg bg-zinc-800 text-white font-medium hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 py-4 px-6 rounded-full bg-gray-100 text-brand-navy font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                     >
-                        <ChevronLeft size={20} /> Back
+                        <ChevronLeft size={20} strokeWidth={3} /> Back
                     </button>
                 )}
                 
                 {step < totalSteps ? (
                     <button 
                         onClick={nextStep}
-                        className="flex-1 py-3 px-4 rounded-lg bg-white text-black font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 py-4 px-6 rounded-full bg-brand-navy text-white font-bold hover:bg-brand-navy/90 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-brand-navy/10"
                     >
-                        Next <ArrowRight size={20} />
+                        Next <ArrowRight size={20} strokeWidth={3} />
                     </button>
                 ) : (
                     <button 
                         onClick={handleTransfer}
-                        className="flex-1 py-3 px-4 rounded-lg bg-brand-yellow text-black font-bold hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 py-4 px-6 rounded-full bg-brand-blue text-white font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-brand-blue/30"
                     >
-                        {store.t('interac.send')} <Send size={18} />
+                        {store.t('interac.send')} <Send size={20} strokeWidth={2.5} />
                     </button>
                 )}
             </div>

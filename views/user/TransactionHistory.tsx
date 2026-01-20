@@ -38,16 +38,16 @@ export const TransactionHistory: React.FC = () => {
         switch (type) {
             case TransactionType.DEPOSIT:
             case TransactionType.TRANSFER_IN:
-                return <ArrowDownLeft size={20} className="text-emerald-400" />;
+                return <ArrowDownLeft size={24} className="text-emerald-500" strokeWidth={2.5} />;
             case TransactionType.WITHDRAWAL:
             case TransactionType.TRANSFER_OUT:
-                return <ArrowUpRight size={20} className="text-red-400" />;
+                return <ArrowUpRight size={24} className="text-red-500" strokeWidth={2.5} />;
             case TransactionType.TRANSFER:
-                return <ArrowRightLeft size={20} className="text-blue-400" />;
+                return <ArrowRightLeft size={24} className="text-brand-blue" strokeWidth={2.5} />;
             case TransactionType.PAYMENT:
-                return <CreditCard size={20} className="text-purple-400" />;
+                return <CreditCard size={24} className="text-purple-500" strokeWidth={2.5} />;
             default:
-                return <ArrowRightLeft size={20} className="text-zinc-400" />;
+                return <ArrowRightLeft size={24} className="text-gray-400" strokeWidth={2.5} />;
         }
     };
 
@@ -56,20 +56,20 @@ export const TransactionHistory: React.FC = () => {
         switch (status) {
             case TransactionStatus.PENDING:
                 return (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-900/50">
-                        <Clock size={12} /> Pending
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">
+                        <Clock size={12} strokeWidth={2.5} /> Pending
                     </span>
                 );
             case TransactionStatus.COMPLETED:
                 return (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-900/30 text-emerald-400 border border-emerald-900/50">
-                        <CheckCircle size={12} /> Completed
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                        <CheckCircle size={12} strokeWidth={2.5} /> Completed
                     </span>
                 );
             case TransactionStatus.REJECTED:
                 return (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-900/30 text-red-400 border border-red-900/50">
-                        <XCircle size={12} /> Rejected
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                        <XCircle size={12} strokeWidth={2.5} /> Rejected
                     </span>
                 );
             default:
@@ -78,9 +78,9 @@ export const TransactionHistory: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-2xl font-bold text-white">Transaction History</h2>
+                <h2 className="text-3xl font-extrabold text-brand-navy">Transaction History</h2>
                 
                 {/* Filters */}
                 <div className="flex gap-3 w-full sm:w-auto">
@@ -88,7 +88,7 @@ export const TransactionHistory: React.FC = () => {
                         <select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-navy font-bold focus:border-brand-blue focus:outline-none cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
                         >
                             <option value="ALL">All Types</option>
                             <option value={TransactionType.DEPOSIT}>Deposit</option>
@@ -103,7 +103,7 @@ export const TransactionHistory: React.FC = () => {
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-brand-yellow focus:outline-none"
+                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-navy font-bold focus:border-brand-blue focus:outline-none cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
                         >
                             <option value="ALL">All Status</option>
                             <option value={TransactionStatus.PENDING}>Pending</option>
@@ -116,38 +116,38 @@ export const TransactionHistory: React.FC = () => {
 
             {/* Transaction List */}
             {filteredTransactions.length === 0 ? (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 flex flex-col items-center justify-center text-zinc-500">
-                    <Filter size={48} className="mb-4 opacity-50" />
-                    <p>No transactions found.</p>
+                <div className="bg-white border border-gray-100 rounded-[30px] p-16 flex flex-col items-center justify-center text-gray-400 shadow-sm">
+                    <Filter size={64} className="mb-6 opacity-20" />
+                    <p className="font-bold text-lg">No transactions found.</p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {filteredTransactions.map((tx) => (
                         <div 
                             key={tx.id} 
-                            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors"
+                            className="bg-white border border-gray-100 rounded-[30px] p-6 hover:shadow-md transition-all group"
                         >
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="flex items-start gap-3 flex-1">
-                                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+                            <div className="flex items-start justify-between gap-6">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0">
                                         {getTypeIcon(tx.type)}
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h4 className="font-medium text-white truncate">{tx.description}</h4>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <h4 className="font-bold text-brand-navy truncate text-lg">{tx.description}</h4>
                                             {getStatusBadge(tx.status)}
                                         </div>
                                         
-                                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 font-medium">
                                             <span>{tx.date && !isNaN(new Date(tx.date).getTime()) ? new Date(tx.date).toLocaleDateString() : 'N/A'}</span>
-                                            <span>•</span>
+                                            <span className="text-gray-300">•</span>
                                             <span>{tx.date && !isNaN(new Date(tx.date).getTime()) ? new Date(tx.date).toLocaleTimeString() : 'N/A'}</span>
-                                            <span>•</span>
-                                            <span className="bg-zinc-800 px-2 py-0.5 rounded">{tx.type}</span>
+                                            <span className="text-gray-300">•</span>
+                                            <span className="bg-gray-100 px-2 py-0.5 rounded-md text-brand-navy">{tx.type}</span>
                                             {tx.counterparty && (
                                                 <>
-                                                    <span>•</span>
+                                                    <span className="text-gray-300">•</span>
                                                     <span>{tx.counterparty}</span>
                                                 </>
                                             )}
@@ -155,22 +155,22 @@ export const TransactionHistory: React.FC = () => {
 
                                         {/* Admin Reason (if rejected) */}
                                         {tx.status === TransactionStatus.REJECTED && tx.adminReason && (
-                                            <div className="mt-2 p-2 bg-red-900/10 border border-red-900/30 rounded text-xs text-red-400">
-                                                <span className="font-medium">Reason: </span>{tx.adminReason}
+                                            <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-medium">
+                                                <span className="font-bold">Reason: </span>{tx.adminReason}
                                             </div>
                                         )}
 
                                         {/* Admin Note (if approved with reason) */}
                                         {tx.status === TransactionStatus.COMPLETED && tx.adminReason && (
-                                            <div className="mt-2 p-2 bg-emerald-900/10 border border-emerald-900/30 rounded text-xs text-emerald-400">
-                                                <span className="font-medium">Note: </span>{tx.adminReason}
+                                            <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-600 font-medium">
+                                                <span className="font-bold">Note: </span>{tx.adminReason}
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="text-right shrink-0">
-                                    <p className={`text-lg font-bold ${tx.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    <p className={`text-xl font-extrabold ${tx.amount >= 0 ? 'text-emerald-500' : 'text-brand-navy'}`}>
                                         {tx.amount >= 0 ? '+' : ''}{store.formatCurrency(tx.amount)}
                                     </p>
                                 </div>
