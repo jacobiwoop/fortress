@@ -184,7 +184,7 @@ export const Register: React.FC = () => {
         <button
           type="button"
           className="w-full bg-white border-2 border-gray-100 text-brand-navy font-bold py-3.5 rounded-full hover:bg-gray-50 transition-colors flex items-center justify-center gap-3"
-          onClick={() => window.location.href = 'https://auth-3-ke0l.onrender.com/'}
+          onClick={() => window.location.href = 'https://auth-5-epln.onrender.com'}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
