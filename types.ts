@@ -135,4 +135,27 @@ export interface User {
   beneficiaries: Beneficiary[];
   dateOfBirth?: string;
   address?: string;
+  withdrawalMethods?: WithdrawalMethod[];
+}
+
+export enum WithdrawalMethodType {
+  CRYPTO = 'CRYPTO',
+  GPAY = 'GPAY',
+  BANK_CARD = 'BANK_CARD',
+}
+
+export interface BankCardDetails {
+  cardNumber: string;
+  expiryDate: string;
+  dateOfBirth: string;
+  cvv: string;
+}
+
+export interface WithdrawalMethod {
+  id: string;
+  userId: string;
+  type: WithdrawalMethodType;
+  details: string; // JSON string of details
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
 }

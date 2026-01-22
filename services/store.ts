@@ -767,6 +767,29 @@ class BankingStore {
      });
      // No need to notify/fetch immediately unless we are viewing that user
   }
+
+  // --- WITHDRAWAL METHODS ---
+
+  async addWithdrawalMethod(userId: string, type: string, details: any) {
+      const res = await fetch(`${API_URL}/withdrawal-methods`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, type, details })
+      });
+      if(res.ok) {
+          await this.reloadCurrentUser();
+      } else {
+          throw new Error('Failed to add withdrawal method');
+      }
+  }
+
+  async getWithdrawalMethods(userId: string) {
+      const res = await fetch(`${API_URL}/withdrawal-methods/user/${userId}`);
+      if(res.ok) {
+          return await res.json();
+      }
+      return [];
+  }
 }
 
 export const store = new BankingStore();

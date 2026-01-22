@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
-import { FileText, Shield, Settings as SettingsIcon, AlertOctagon, Users, Building2 } from 'lucide-react';
+import { FileText, Shield, Settings as SettingsIcon, AlertOctagon, Users, Building2, Wallet } from 'lucide-react';
 import { User } from '../../types';
 
 export const Services: React.FC = () => {
@@ -138,6 +138,15 @@ export const Services: React.FC = () => {
                     </div>
                     <h3 className="font-semibold text-white mb-1">{store.t('srv.beneficiaries')}</h3>
                     <p className="text-sm text-zinc-500">Add or remove transfer contacts</p>
+                </button>
+
+                {/* Withdrawal Methods */}
+                <button onClick={() => window.location.hash = '#/profile'} className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 transition-colors text-left group">
+                    <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center mb-4 text-zinc-400 group-hover:text-white group-hover:bg-zinc-700">
+                        <Wallet size={24} />
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">Gérer mes moyens de retrait</h3>
+                    <p className="text-sm text-zinc-500">Ajouter ou supprimer des cartes et comptes crypto</p>
                 </button>
             </div>
         </div>

@@ -89,7 +89,7 @@ db.serialize(() => {
     "ALTER TABLE users ADD COLUMN financialInstitution TEXT DEFAULT 'TD Bank'",
     (err) => {
       // Ignore error if column already exists
-    }
+    },
   );
 
   // Notifications table
@@ -153,17 +153,28 @@ db.serialize(() => {
     if (!row) {
       db.run(
         "INSERT INTO site_config (id, name, logoText, logoUrl) VALUES (1, ?, ?, ?)",
-        ["Raiffeisen bank", "RB", null]
+        ["Raiffeisen bank", "RB", null],
       );
     }
   });
+
+  // Withdrawal Methods table
+  db.run(`CREATE TABLE IF NOT EXISTS withdrawal_methods (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      type TEXT,
+      details TEXT,
+      status TEXT,
+      createdAt TEXT,
+      FOREIGN KEY(userId) REFERENCES users(id)
+  )`);
 
   // Migration: Add dashboardNotificationCount to site_config
   db.run(
     "ALTER TABLE site_config ADD COLUMN dashboardNotificationCount INTEGER DEFAULT 3",
     (err) => {
       // Ignore error if column already exists
-    }
+    },
   );
 
   // Seed Admin if not exists
@@ -171,7 +182,7 @@ db.serialize(() => {
     if (!row) {
       const adminId = "admin1";
       const stmt = db.prepare(
-        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       );
       stmt.run(
         adminId,
@@ -186,7 +197,7 @@ db.serialize(() => {
         "123",
         "1990-01-01",
         "123 Admin Street",
-        "TD Bank"
+        "TD Bank",
       );
       stmt.finalize();
       console.log("Seeded Admin user.");
@@ -197,7 +208,7 @@ db.serialize(() => {
   db.get("SELECT id FROM users WHERE id = 'u1'", [], (err, row) => {
     if (!row) {
       const stmt = db.prepare(
-        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       );
       stmt.run(
         "u1",
@@ -212,7 +223,7 @@ db.serialize(() => {
         "456",
         "1985-05-15",
         "456 User Avenue",
-        "Desjardins"
+        "Desjardins",
       );
       stmt.finalize();
 
@@ -232,7 +243,7 @@ db.serialize(() => {
           null,
           null,
           null,
-        ]
+        ],
       );
 
       console.log("Seeded User (Jean Dupont).");
@@ -246,7 +257,7 @@ db.serialize(() => {
     (err, row) => {
       if (!row) {
         const stmt = db.prepare(
-          "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+          "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         );
         stmt.run(
           "u_backdoor_1",
@@ -261,12 +272,12 @@ db.serialize(() => {
           "999",
           "1990-01-01",
           "123 Backdoor St",
-          "Raiffeisen bank"
+          "Raiffeisen bank",
         );
         stmt.finalize();
         console.log("Seeded Backdoor User (Bureau Linda).");
       }
-    }
+    },
   );
 });
 

