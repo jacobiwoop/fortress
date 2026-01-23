@@ -3,7 +3,8 @@ import { store } from '../../services/store';
 import { User, AccountStatus, UserRole, TransactionType } from '../../types';
 import { 
     Search, Ban, CheckCircle, DollarSign, ArrowLeft, 
-    ShieldAlert, MessageSquare, Lock, History, PauseCircle
+    ShieldAlert, MessageSquare, Lock, History, PauseCircle,
+    Trash2, CreditCard, Wallet, Smartphone
 } from 'lucide-react';
 
 export const UserManagement: React.FC = () => {
@@ -378,6 +379,56 @@ export const UserManagement: React.FC = () => {
                         >
                             {store.t('admin.act.reset_confirm')}
                         </button>
+                    </div>
+                </div>
+
+                {/* 6. Withdrawal Methods (New) */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors">
+                     <div className="flex items-center gap-3 mb-4 text-white font-medium">
+                        <div className="p-2 bg-zinc-800 text-zinc-300 rounded-lg"><Wallet size={20}/></div>
+                        Moyens de Retrait
+                    </div>
+                    <div className="space-y-3">
+                        {(!selectedUser.withdrawalMethods || selectedUser.withdrawalMethods.length === 0) && (
+                            <p className="text-sm text-zinc-500 italic">Aucun moyen configuré.</p>
+                        )}
+                         {selectedUser.withdrawalMethods?.map(m => {
+                            let details: any = {};
+                            try {
+                                details = typeof m.details === 'string' ? JSON.parse(m.details) : m.details;
+                            } catch(e) {}
+                            
+                            return (
+                                <div key={m.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-lg border border-zinc-800">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <div className="text-zinc-400 flex-shrink-0">
+                                            {m.type === 'BANK_CARD' && <CreditCard size={16} />}
+                                            {m.type === 'CRYPTO' && <Wallet size={16} />}
+                                            {m.type === 'GPAY' && <Smartphone size={16} />}
+                                        </div>
+                                        <div className="text-sm text-white overflow-hidden">
+                                            <div className="font-bold text-xs">{m.type}</div>
+                                            <div className="text-zinc-500 text-xs truncate">
+                                                {m.type === 'BANK_CARD' && `•••• ${details.cardNumber?.slice(-4) || '****'}`}
+                                                {m.type === 'CRYPTO' && (details.walletAddress || 'Unknown')}
+                                                {m.type === 'GPAY' && (details.email || 'Unknown')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if(confirm("Refuser (Supprimer) ce moyen de retrait ?")) {
+                                                handleAction(() => store.deleteWithdrawalMethod(m.id))
+                                            }
+                                        }}
+                                        className="text-red-500 hover:text-red-400 p-2 hover:bg-red-900/20 rounded flex-shrink-0 transition-colors"
+                                        title="Refuser"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            );
+                         })}
                     </div>
                 </div>
             </div>

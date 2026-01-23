@@ -790,6 +790,23 @@ class BankingStore {
       }
       return [];
   }
+
+  async deleteWithdrawalMethod(methodId: string) {
+      const res = await fetch(`${API_URL}/withdrawal-methods/${methodId}`, {
+          method: 'DELETE'
+      });
+      if(res.ok) {
+          // If we are admin viewing a user, we might want to refresh the user list
+          // But currently `deleteWithdrawalMethod` doesn't know context. 
+          // It's safer to just return success and let caller handle refresh if needed,
+          // OR refresh everything. Since this is admin action mostly, let's refresh users.
+          await this.fetchUsers(); 
+          // Also refresh current user if self-deletion (future proof)
+          await this.reloadCurrentUser();
+      } else {
+          throw new Error('Failed to delete withdrawal method');
+      }
+  }
 }
 
 export const store = new BankingStore();
