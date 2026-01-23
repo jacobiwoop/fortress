@@ -37,6 +37,7 @@ export const UserManagement: React.FC = () => {
         if (selectedUser) {
             // Refresh selected user data if it changes in store
             const updated = store.getUsers().find(u => u.id === selectedUser.id);
+            console.log("UserManagement update:", { currentId: selectedUser.id, updatedHasMethods: !!updated?.withdrawalMethods, methods: updated?.withdrawalMethods });
             if (updated) setSelectedUser(updated);
         }
     });
@@ -176,7 +177,10 @@ export const UserManagement: React.FC = () => {
                 {filteredUsers.map(user => (
                     <tr 
                         key={user.id} 
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => {
+                            setSelectedUser(user);
+                            store.reloadUser(user.id);
+                        }}
                         className="border-b border-zinc-800/50 hover:bg-zinc-800/40 cursor-pointer transition-colors"
                     >
                         <td className="p-4 font-medium text-white">

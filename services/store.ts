@@ -367,6 +367,28 @@ class BankingStore {
       this.notify();
   }
 
+  async reloadUser(userId: string) {
+      console.log("Store: reloading user", userId);
+      try {
+          const res = await fetch(`${API_URL}/users/${userId}?_t=${Date.now()}`);
+          if (res.ok) {
+              const updatedUser = await res.json();
+              console.log("Store: user reloaded", updatedUser);
+              const index = this.users.findIndex(u => u.id === userId);
+              if (index !== -1) {
+                  this.users[index] = updatedUser;
+              } else {
+                  this.users.push(updatedUser);
+              }
+              this.notify();
+          } else {
+             console.error("Store: failed to load user", res.status);
+          }
+      } catch(e) {
+          console.error("Failed to reload user", e);
+      }
+  }
+
   // --- USER ACTIONS (Placeholders to avoid breaking imports, should be refactored to async) ---
   
   async reloadCurrentUser() {
@@ -792,16 +814,24 @@ class BankingStore {
   }
 
   async deleteWithdrawalMethod(methodId: string) {
+      // Find user before deleting to reload them later
+      let userId: string | null = null;
+      for(const u of this.users) {
+          if(u.withdrawalMethods?.find(m => m.id === methodId)) {
+              userId = u.id;
+              break;
+          }
+      }
+
       const res = await fetch(`${API_URL}/withdrawal-methods/${methodId}`, {
           method: 'DELETE'
       });
       if(res.ok) {
-          // If we are admin viewing a user, we might want to refresh the user list
-          // But currently `deleteWithdrawalMethod` doesn't know context. 
-          // It's safer to just return success and let caller handle refresh if needed,
-          // OR refresh everything. Since this is admin action mostly, let's refresh users.
-          await this.fetchUsers(); 
-          // Also refresh current user if self-deletion (future proof)
+          if (userId) {
+              await this.reloadUser(userId);
+          } else {
+            await this.fetchUsers(); 
+          }
           await this.reloadCurrentUser();
       } else {
           throw new Error('Failed to delete withdrawal method');
