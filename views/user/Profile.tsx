@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { store } from '../../services/store';
 import { User, UserRole } from '../../types';
 import { UserCircle, Shield, Key, Edit2 } from 'lucide-react';
+import { WithdrawalMethods } from './WithdrawalMethods';
 
 export const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(store.getCurrentUser());
@@ -63,7 +64,8 @@ export const Profile: React.FC = () => {
         </div>
 
         {/* Right Column: Details */}
-        <div className="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-8">
+        <div className="md:col-span-2 space-y-6">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white">{store.t('profile.details')}</h3>
                 <button 
@@ -96,9 +98,9 @@ export const Profile: React.FC = () => {
 
                 {user.role === UserRole.USER && (
                     <div>
-                        <label className="block text-sm font-medium text-zinc-500 mb-1">{store.t('profile.iban')}</label>
+                        <label className="block text-sm font-medium text-zinc-500 mb-1">Banque de réception</label>
                         <div className="flex items-center gap-2">
-                             <p className="text-white font-mono text-lg">{user.iban}</p>
+                             <p className="text-white text-lg">{user.financialInstitution || 'TD Bank'}</p>
                              <span className="text-xs text-emerald-500 bg-emerald-900/20 px-2 py-0.5 rounded">Active</span>
                         </div>
                     </div>
@@ -120,6 +122,8 @@ export const Profile: React.FC = () => {
                     </div>
                 )}
             </div>
+        </div>
+        <WithdrawalMethods />
         </div>
       </div>
     </div>

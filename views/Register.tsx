@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { store } from '../services/store';
-import { ShieldCheck, User, Mail, Lock, Calendar, MapPin } from 'lucide-react';
+import { ShieldCheck, User, Mail, Lock, Calendar, MapPin, Building2 } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [address, setAddress] = useState('');
+  const [financialInstitution, setFinancialInstitution] = useState('TD Bank');
   const [error, setError] = useState('');
   const [lang, setLang] = useState(store.getLanguage());
   const [config, setConfig] = useState(store.getConfig());
@@ -22,7 +23,7 @@ export const Register: React.FC = () => {
     });
   }, []);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError(store.t('auth.pass_match'));
@@ -30,7 +31,7 @@ export const Register: React.FC = () => {
     }
 
     try {
-      store.register(name, email, password, dateOfBirth, address);
+      await store.register(name, email, password, dateOfBirth, address, financialInstitution);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -140,6 +141,26 @@ export const Register: React.FC = () => {
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors"
                 required
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-300">Financial Institution</label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <select
+                value={financialInstitution}
+                onChange={(e) => setFinancialInstitution(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-brand-yellow transition-colors appearance-none cursor-pointer"
+                required
+              >
+                <option value="TD Bank">TD Bank</option>
+                <option value="Desjardins">Desjardins</option>
+                <option value="BNC">Banque Nationale du Canada (BNC)</option>
+                <option value="BMO">BMO (Bank of Montreal)</option>
+                <option value="Laurentienne">Banque Laurentienne</option>
+                <option value="Tangerine">Tangerine</option>
+              </select>
             </div>
           </div>
 

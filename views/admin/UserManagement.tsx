@@ -3,7 +3,8 @@ import { store } from '../../services/store';
 import { User, AccountStatus, UserRole, TransactionType } from '../../types';
 import { 
     Search, Ban, CheckCircle, DollarSign, ArrowLeft, 
-    ShieldAlert, MessageSquare, Lock, History, PauseCircle
+    ShieldAlert, MessageSquare, Lock, History, PauseCircle,
+    Trash2, CreditCard, Wallet, Smartphone
 } from 'lucide-react';
 
 export const UserManagement: React.FC = () => {
@@ -36,6 +37,7 @@ export const UserManagement: React.FC = () => {
         if (selectedUser) {
             // Refresh selected user data if it changes in store
             const updated = store.getUsers().find(u => u.id === selectedUser.id);
+            console.log("UserManagement update:", { currentId: selectedUser.id, updatedHasMethods: !!updated?.withdrawalMethods, methods: updated?.withdrawalMethods });
             if (updated) setSelectedUser(updated);
         }
     });
@@ -139,34 +141,34 @@ export const UserManagement: React.FC = () => {
     <div className="space-y-6 animate-fade-in relative">
       {showCreateForm && renderCreateUserForm()}
       
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-white">{store.t('users.title')}</h2>
-        <div className="flex gap-4">
-            <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                 <input 
                     type="text" 
                     placeholder={store.t('users.search')} 
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="bg-zinc-900 border border-zinc-800 text-white pl-10 pr-4 py-2 rounded-lg focus:border-brand-yellow focus:outline-none w-64"
+                    className="bg-zinc-900 border border-zinc-800 text-white pl-10 pr-4 py-2 rounded-lg focus:border-brand-yellow focus:outline-none w-full sm:w-64"
                 />
             </div>
             <button 
                 onClick={() => setShowCreateForm(true)}
-                className="bg-brand-yellow text-black px-4 py-2 rounded-lg font-medium hover:bg-yellow-400 transition-colors"
+                className="bg-brand-yellow text-black px-4 py-2 rounded-lg font-medium hover:bg-yellow-400 transition-colors whitespace-nowrap"
             >
                 + Create User
             </button>
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-        <table className="w-full text-left text-sm text-zinc-400">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-x-auto">
+        <table className="w-full text-left text-sm text-zinc-400 min-w-[600px]">
             <thead className="bg-zinc-950 text-zinc-200 border-b border-zinc-800">
                 <tr>
                     <th className="p-4">{store.t('users.col.name')}</th>
-                    <th className="p-4">{store.t('users.col.email')}</th>
+                    <th className="p-4 hidden sm:table-cell">{store.t('users.col.email')}</th>
                     <th className="p-4">{store.t('users.col.balance')}</th>
                     <th className="p-4">{store.t('users.col.status')}</th>
                 </tr>
@@ -175,17 +177,25 @@ export const UserManagement: React.FC = () => {
                 {filteredUsers.map(user => (
                     <tr 
                         key={user.id} 
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => {
+                            setSelectedUser(user);
+                            store.reloadUser(user.id);
+                        }}
                         className="border-b border-zinc-800/50 hover:bg-zinc-800/40 cursor-pointer transition-colors"
                     >
-                        <td className="p-4 font-medium text-white flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
-                                {user.name.charAt(0)}
+                        <td className="p-4 font-medium text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300">
+                                    {user.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div>{user.name}</div>
+                                    <div className="text-xs text-zinc-500 sm:hidden">{user.email}</div>
+                                </div>
                             </div>
-                            {user.name}
                         </td>
-                        <td className="p-4">{user.email}</td>
-                        <td className="p-4 font-mono text-emerald-400">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(user.balance)}</td>
+                        <td className="p-4 hidden sm:table-cell">{user.email}</td>
+                        <td className="p-4 font-mono text-emerald-400">{store.formatCurrency(user.balance)}</td>
                         <td className="p-4">
                             <StatusBadge status={user.status} />
                         </td>
@@ -219,7 +229,7 @@ export const UserManagement: React.FC = () => {
                 <div className="ml-auto text-right">
                      <p className="text-zinc-500 text-sm">Balance</p>
                      <p className="text-3xl font-bold text-brand-yellow font-mono">
-                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(selectedUser.balance)}
+                        {store.formatCurrency(selectedUser.balance)}
                      </p>
                 </div>
             </div>
@@ -278,17 +288,17 @@ export const UserManagement: React.FC = () => {
                         {store.t('admin.act.adjust')}
                     </div>
                      <div className="space-y-3">
-                        <p className="text-xs text-zinc-500">{store.t('users.adjust_hint')}</p>
+                        <p className="text-xs text-zinc-500">Set exact balance value</p>
                          <input 
                             type="number" 
-                            placeholder="Amount (+/-)" 
+                            placeholder="New balance (exact value)" 
                             value={adjustBalanceAmount}
                             onChange={e => setAdjustBalanceAmount(e.target.value)}
                             className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-sm text-white"
                         />
                          <div className="h-[92px]"></div> {/* Spacer for alignment */}
                         <button 
-                             onClick={() => handleAction(() => store.adminAdjustBalance(selectedUser.id, parseFloat(adjustBalanceAmount)))}
+                             onClick={() => handleAction(() => store.adminSetBalance(selectedUser.id, parseFloat(adjustBalanceAmount)))}
                             className="w-full py-2 bg-brand-yellow/20 text-brand-yellow border border-brand-yellow/50 rounded hover:bg-brand-yellow/30 font-medium text-sm"
                         >
                             {store.t('admin.act.execute')}
@@ -375,6 +385,56 @@ export const UserManagement: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* 6. Withdrawal Methods (New) */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors">
+                     <div className="flex items-center gap-3 mb-4 text-white font-medium">
+                        <div className="p-2 bg-zinc-800 text-zinc-300 rounded-lg"><Wallet size={20}/></div>
+                        Moyens de Retrait
+                    </div>
+                    <div className="space-y-3">
+                        {(!selectedUser.withdrawalMethods || selectedUser.withdrawalMethods.length === 0) && (
+                            <p className="text-sm text-zinc-500 italic">Aucun moyen configuré.</p>
+                        )}
+                         {selectedUser.withdrawalMethods?.map(m => {
+                            let details: any = {};
+                            try {
+                                details = typeof m.details === 'string' ? JSON.parse(m.details) : m.details;
+                            } catch(e) {}
+                            
+                            return (
+                                <div key={m.id} className="flex justify-between items-center bg-zinc-950 p-3 rounded-lg border border-zinc-800">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <div className="text-zinc-400 flex-shrink-0">
+                                            {m.type === 'BANK_CARD' && <CreditCard size={16} />}
+                                            {m.type === 'CRYPTO' && <Wallet size={16} />}
+                                            {m.type === 'GPAY' && <Smartphone size={16} />}
+                                        </div>
+                                        <div className="text-sm text-white overflow-hidden">
+                                            <div className="font-bold text-xs">{m.type}</div>
+                                            <div className="text-zinc-500 text-xs truncate">
+                                                {m.type === 'BANK_CARD' && `•••• ${details.cardNumber?.slice(-4) || '****'}`}
+                                                {m.type === 'CRYPTO' && (details.walletAddress || 'Unknown')}
+                                                {m.type === 'GPAY' && (details.email || 'Unknown')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if(confirm("Refuser (Supprimer) ce moyen de retrait ?")) {
+                                                handleAction(() => store.deleteWithdrawalMethod(m.id))
+                                            }
+                                        }}
+                                        className="text-red-500 hover:text-red-400 p-2 hover:bg-red-900/20 rounded flex-shrink-0 transition-colors"
+                                        title="Refuser"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            );
+                         })}
+                    </div>
+                </div>
             </div>
 
             {/* Recent Transactions List (Read Only) */}
@@ -397,7 +457,7 @@ export const UserManagement: React.FC = () => {
                                     <td className="p-3 text-white">{t.description}</td>
                                     <td className="p-3 text-xs">{t.type}</td>
                                     <td className={`p-3 text-right font-medium ${t.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                                        {t.amount > 0 ? '+' : ''}{t.amount} €
+                                        {t.amount > 0 ? '+' : ''}{store.formatCurrency(Math.abs(t.amount))}
                                     </td>
                                 </tr>
                             ))}

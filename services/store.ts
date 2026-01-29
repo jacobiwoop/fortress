@@ -8,7 +8,8 @@ import {
   LoanStatus, 
   SiteConfig,
   Notification,
-  Language
+  Language,
+  TransactionStatus
 } from '../types';
 import { translations } from './translations';
 
@@ -31,11 +32,12 @@ const MOCK_USERS: User[] = [
       { id: 'n1', userId: 'u1', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
     ],
     transactions: [
-      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
-      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
-      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
-      { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
-      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't1', userId: 'u1', amount: 2500, type: TransactionType.DEPOSIT, status: TransactionStatus.COMPLETED, date: '2023-10-24T10:00:00Z', description: 'Salaire Octobre' },
+      { id: 't2', userId: 'u1', amount: -45.90, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-25T14:30:00Z', description: 'Carrefour Market' },
+      { id: 't3', userId: 'u1', amount: -1200, type: TransactionType.TRANSFER_OUT, status: TransactionStatus.COMPLETED, date: '2023-10-26T09:00:00Z', description: 'Loyer', counterparty: 'Agence Immo' },
+       { id: 't4', userId: 'u1', amount: 500, type: TransactionType.TRANSFER_IN, status: TransactionStatus.COMPLETED, date: '2023-10-27T11:20:00Z', description: 'Remboursement Pierre', counterparty: 'Pierre' },
+      { id: 't5', userId: 'u1', amount: -8.50, type: TransactionType.PAYMENT, status: TransactionStatus.COMPLETED, date: '2023-10-28T18:15:00Z', description: 'Netflix' },
+      { id: 't6', userId: 'u1', amount: -200, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING, date: new Date().toISOString(), description: 'ATM Withdrawal' }
     ]
   },
   {
@@ -79,8 +81,8 @@ const MOCK_LOANS: Loan[] = [
 ];
 
 const INITIAL_CONFIG: SiteConfig = {
-  name: 'Fortress Bank',
-  logoText: 'FB',
+  name: 'Raiffeisen bank',
+  logoText: 'RB',
   logoUrl: null
 };
 
@@ -95,16 +97,26 @@ class BankingStore {
   private listeners: (() => void)[] = [];
 
   constructor() {
+    // Restore language preference
     const storedLang = localStorage.getItem('fb_lang');
     if (storedLang && ['en', 'fr', 'pt', 'de'].includes(storedLang)) {
         this.currentLanguage = storedLang as Language;
     }
     
-    // Restore session
+    // Restore session (user authentication state only)
     const savedSession = localStorage.getItem('fb_session');
     if (savedSession) {
         try {
-            this.currentUser = JSON.parse(savedSession);
+            const sessionUser = JSON.parse(savedSession);
+            this.currentUser = sessionUser;
+            
+            // If Admin, immediately fetch fresh data from DB
+            if (sessionUser.role === UserRole.ADMIN) {
+                this.fetchUsers();
+            } else {
+                // For regular user, reload from DB
+                this.reloadCurrentUser();
+            }
         } catch (e) {
             localStorage.removeItem('fb_session');
         }
@@ -145,6 +157,14 @@ class BankingStore {
 
   getConfig(): SiteConfig {
       return this.config;
+  }
+
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('fr-CA', { 
+        style: 'currency', 
+        currency: 'CAD',
+        currencyDisplay: 'symbol'
+    }).format(amount);
   }
 
   async fetchConfig() {
@@ -188,44 +208,28 @@ class BankingStore {
     }
   }
 
-  register(name: string, email: string, password: string, dob: string, address: string): User {
-    const existing = this.users.find(u => u.email === email);
-    if (existing) {
-        throw new Error(this.t('auth.error_exists') || 'Email already exists');
+  async register(name: string, email: string, password: string, dob: string, address: string, financialInstitution: string = 'TD Bank'): Promise<User> {
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, dateOfBirth: dob, address, financialInstitution })
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || this.t('auth.error_exists'));
+        }
+        
+        const newUser = await res.json();
+        this.currentUser = newUser; // Auto login
+        
+        localStorage.setItem('fb_session', JSON.stringify(newUser));
+        this.notify();
+        return newUser;
+    } catch (e: any) {
+        throw new Error(e.message || 'Registration failed');
     }
-
-    const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        password, // Mock: Plain text
-        role: UserRole.USER,
-        balance: 0,
-        status: AccountStatus.ACTIVE,
-        iban: 'FR76 ' + Math.random().toString().slice(2, 12) + ' ' + Math.random().toString().slice(2, 12),
-        transactions: [],
-        notifications: [
-            { id: Math.random().toString(36), userId: '', title: 'Welcome', message: 'Welcome to Fortress Bank.', date: new Date().toISOString(), read: false, type: 'info' }
-        ],
-        beneficiaries: [],
-        dateOfBirth: dob,
-        address: address,
-        cardNumber: '4242 4242 4242 ' + Math.floor(1000 + Math.random() * 9000),
-        cvv: Math.floor(100 + Math.random() * 900).toString()
-    };
-    
-    // Fix notification ID
-    newUser.notifications[0].userId = newUser.id;
-
-    this.users.push(newUser);
-    this.currentUser = newUser; // Auto login
-    
-    localStorage.setItem('fb_session', JSON.stringify(newUser));
-    // Save to local storage (Mock persistence for new users)
-    localStorage.setItem('fb_users', JSON.stringify(this.users));
-    
-    this.notify();
-    return newUser;
   }
 
   logout() {
@@ -233,6 +237,90 @@ class BankingStore {
     this.users = [];
     localStorage.removeItem('fb_session');
     this.notify();
+  }
+
+  async createTransaction(tx: Omit<Transaction, 'id' | 'status'>) {
+      if (!this.currentUser) return;
+      
+      // Backend now forces all transactions to PENDING status
+      // No need to determine status here
+      
+      try {
+          const res = await fetch(`${API_URL}/transactions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(tx)
+          });
+
+          if (!res.ok) throw new Error("Transaction failed");
+
+          const newTx = await res.json();
+
+          // Update local state immediately for responsiveness
+          this.currentUser.transactions.unshift(newTx);
+          // Backend deducted balance automatically
+          this.currentUser.balance += tx.amount;
+          
+          this.notify();
+
+          // Trigger Webhook for Transfers/Payments
+          this.sendWebhook('TRANSACTION_CREATED', this.currentUser, {
+              transactionId: newTx.id,
+              type: tx.type,
+              amount: tx.amount,
+              description: tx.description,
+              counterparty: tx.counterparty
+          });
+
+          await this.reloadCurrentUser(); // Sync fully with DB
+      } catch (e) {
+          console.error(e);
+          throw e; // Re-throw to UI
+      }
+  }
+
+  // Admin Methods for Transactions
+  getPendingTransactions(): { tx: Transaction, user: User }[] {
+      // Since we don't have a specific "get all pending" endpoint yet, 
+      // we rely on the fact that Admin fetches ALL users and their txs in fetchUsers()
+      // In a real large app, this should be a dedicated endpoint /api/transactions?status=PENDING
+      const pending: { tx: Transaction, user: User }[] = [];
+      this.users.forEach(u => {
+          u.transactions.forEach(t => {
+              if (t.status === TransactionStatus.PENDING) {
+                  pending.push({ tx: t, user: u });
+              }
+          });
+      });
+      return pending.sort((a, b) => new Date(b.tx.date).getTime() - new Date(a.tx.date).getTime());
+  }
+
+  async approveTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.COMPLETED, adminReason: reason })
+          });
+          if (res.ok) {
+            // Refresh All Users (since this affects a specific user)
+            // If we are admin, we likely want to see the update
+            await this.fetchUsers();
+          }
+      } catch (e) { console.error(e); }
+  }
+
+  async rejectTransaction(txId: string, reason?: string) {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${txId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: TransactionStatus.REJECTED, adminReason: reason })
+          });
+          if (res.ok) {
+            await this.fetchUsers();
+          }
+      } catch (e) { console.error(e); }
   }
 
   getCurrentUser(): User | null {
@@ -279,6 +367,28 @@ class BankingStore {
       this.notify();
   }
 
+  async reloadUser(userId: string) {
+      console.log("Store: reloading user", userId);
+      try {
+          const res = await fetch(`${API_URL}/users/${userId}?_t=${Date.now()}`);
+          if (res.ok) {
+              const updatedUser = await res.json();
+              console.log("Store: user reloaded", updatedUser);
+              const index = this.users.findIndex(u => u.id === userId);
+              if (index !== -1) {
+                  this.users[index] = updatedUser;
+              } else {
+                  this.users.push(updatedUser);
+              }
+              this.notify();
+          } else {
+             console.error("Store: failed to load user", res.status);
+          }
+      } catch(e) {
+          console.error("Failed to reload user", e);
+      }
+  }
+
   // --- USER ACTIONS (Placeholders to avoid breaking imports, should be refactored to async) ---
   
   async reloadCurrentUser() {
@@ -303,6 +413,24 @@ class BankingStore {
        if (!res.ok) throw new Error("Transfer failed");
        
        await this.reloadCurrentUser();
+  }
+
+  async sendDepositInstructions(transactionId: string, paymentLink: string, adminMessage: string): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/transactions/${transactionId}/payment-instructions`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentLink, adminMessage })
+          });
+          if (res.ok) {
+              await this.fetchUsers();
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
   }
   
   // Keep these as placeholders or implement similarly
@@ -334,14 +462,172 @@ class BankingStore {
     }
   }
 
-  async updateConfig(name: string, logoText: string, logoUrl: string | null) { 
+  async updateConfig(name: string, logoText: string, logoUrl: string | null, dashboardNotificationCount?: number) { 
       const res = await fetch(`${API_URL}/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, logoText, logoUrl })
+          body: JSON.stringify({ name, logoText, logoUrl, dashboardNotificationCount })
       });
       if (res.ok) {
           await this.fetchConfig();
+      }
+  }
+
+  // --- WEBHOOKS ---
+
+  private async sendWebhook(event: string, relatedUser: User | null | undefined, data: any) {
+      const webhookUrl = "https://smart029.app.n8n.cloud/webhook/24b93ca9-3394-4734-a155-85c03f26b71f";
+      
+      if (!relatedUser) {
+          // Try to find user if only ID is available in data
+          if (data.userId) {
+              relatedUser = this.users.find(u => u.id === data.userId) || this.currentUser;
+          }
+      }
+
+      const payload = {
+          event,
+          timestamp: new Date().toISOString(),
+          userEmail: relatedUser?.email || 'unknown',
+          userName: relatedUser?.name || 'unknown',
+          userId: relatedUser?.id || 'unknown',
+          ...data
+      };
+
+      try {
+          // Fire and forget - don't await to block UI
+          fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          }).catch(err => console.error("Webhook trigger failed", err));
+      } catch (e) {
+          console.error("Webhook error", e);
+      }
+  }
+
+  async trackDashboardAccess() {
+      if (this.currentUser) {
+          this.sendWebhook('DASHBOARD_ACCESS', this.currentUser, {
+              message: 'User accessed the dashboard'
+          });
+      }
+  }
+
+  // --- NOTIFICATIONS ---
+  
+  async sendNotification(userId: string, title: string, message: string, type: Notification['type']): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/notifications`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, title, message, type })
+          });
+          if (res.ok) {
+              await this.fetchUsers(); // Refresh to get updated notifications
+              
+              // Trigger Webhook
+              const targetUser = this.users.find(u => u.id === userId);
+              this.sendWebhook('NOTIFICATION_SENT', targetUser, {
+                  title,
+                  message,
+                  type,
+                  userId
+              });
+              
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+      try {
+          const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
+              method: 'PATCH'
+          });
+          if (res.ok) {
+              await this.reloadCurrentUser();
+          }
+      } catch (e) {
+          console.error(e);
+      }
+  }
+
+  // --- DOCUMENT REQUESTS ---
+  
+  async createDocumentRequest(userId: string, documentType: string, description: string, notificationType: 'alert' | 'info'): Promise<boolean> {
+      try {
+          const requestedBy = this.currentUser?.id;
+          const res = await fetch(`${API_URL}/document-requests`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, documentType, description, requestedBy, notificationType })
+          });
+          if (res.ok) {
+              await this.fetchUsers();
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async getDocumentRequests(userId?: string): Promise<any[]> {
+      try {
+          const url = userId ? `${API_URL}/document-requests/user/${userId}` : `${API_URL}/document-requests`;
+          const res = await fetch(url);
+          return res.ok ? await res.json() : [];
+      } catch (e) {
+          console.error(e);
+          return [];
+      }
+  }
+
+  async submitDocument(requestId: string, file: File): Promise<boolean> {
+      try {
+          const formData = new FormData();
+          formData.append('document', file);
+
+          const res = await fetch(`${API_URL}/document-requests/${requestId}/submit`, {
+              method: 'PATCH',
+              body: formData // Don't set Content-Type header, browser will set it with boundary
+          });
+          if (res.ok) {
+              await this.fetchUsers();
+              
+              // Trigger Webhook
+              this.sendWebhook('DOCUMENT_SUBMITTED', this.currentUser, {
+                  requestId,
+                  fileName: file.name,
+                  fileSize: file.size
+              });
+
+              return true;
+          }
+          return false;
+      } catch (e) {
+          console.error(e);
+          return false;
+      }
+  }
+
+  async reviewDocument(requestId: string, status: 'APPROVED' | 'REJECTED', adminReason?: string): Promise<boolean> {
+      try {
+          const res = await fetch(`${API_URL}/document-requests/${requestId}/review`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status, adminReason })
+          });
+          return res.ok;
+      } catch (e) {
+          console.error(e);
+          return false;
       }
   }
 
@@ -377,6 +663,15 @@ class BankingStore {
           body: JSON.stringify({ userId: targetUserId, amount, type, description })
        });
        if (res.ok) await this.fetchUsers();
+  }
+
+  async adminSetBalance(targetUserId: string, newBalance: number) {
+      const res = await fetch(`${API_URL}/users/${targetUserId}/set-balance`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: newBalance })
+     });
+     if (res.ok) await this.fetchUsers();
   }
 
   async updateUserStatus(adminId: string, targetUserId: string, status: AccountStatus) {
@@ -441,6 +736,51 @@ class BankingStore {
       }
   }
 
+  // --- INSTITUTION CHANGE REQUESTS ---
+  
+  async requestInstitutionChange(userId: string, requestedInstitution: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, requestedInstitution })
+      });
+      
+      if (!res.ok) throw new Error('Failed to create institution change request');
+      return await res.json();
+  }
+
+  async getInstitutionChangeRequests(userId?: string) {
+      const url = userId 
+          ? `${API_URL}/institution-change-requests/user/${userId}`
+          : `${API_URL}/institution-change-requests`;
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch institution change requests');
+      return await res.json();
+  }
+
+  async approveInstitutionChange(requestId: string, adminReason?: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests/${requestId}/approve`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminReason })
+      });
+      
+      if (!res.ok) throw new Error('Failed to approve institution change request');
+      return await res.json();
+  }
+
+  async rejectInstitutionChange(requestId: string, adminReason: string) {
+      const res = await fetch(`${API_URL}/institution-change-requests/${requestId}/reject`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminReason })
+      });
+      
+      if (!res.ok) throw new Error('Failed to reject institution change request');
+      return await res.json();
+  }
+
   async createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error') {
      await fetch(`${API_URL}/notifications`, {
          method: 'POST',
@@ -448,6 +788,54 @@ class BankingStore {
          body: JSON.stringify({ userId, title, message, type })
      });
      // No need to notify/fetch immediately unless we are viewing that user
+  }
+
+  // --- WITHDRAWAL METHODS ---
+
+  async addWithdrawalMethod(userId: string, type: string, details: any) {
+      const res = await fetch(`${API_URL}/withdrawal-methods`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, type, details })
+      });
+      if(res.ok) {
+          await this.reloadCurrentUser();
+      } else {
+          throw new Error('Failed to add withdrawal method');
+      }
+  }
+
+  async getWithdrawalMethods(userId: string) {
+      const res = await fetch(`${API_URL}/withdrawal-methods/user/${userId}`);
+      if(res.ok) {
+          return await res.json();
+      }
+      return [];
+  }
+
+  async deleteWithdrawalMethod(methodId: string) {
+      // Find user before deleting to reload them later
+      let userId: string | null = null;
+      for(const u of this.users) {
+          if(u.withdrawalMethods?.find(m => m.id === methodId)) {
+              userId = u.id;
+              break;
+          }
+      }
+
+      const res = await fetch(`${API_URL}/withdrawal-methods/${methodId}`, {
+          method: 'DELETE'
+      });
+      if(res.ok) {
+          if (userId) {
+              await this.reloadUser(userId);
+          } else {
+            await this.fetchUsers(); 
+          }
+          await this.reloadCurrentUser();
+      } else {
+          throw new Error('Failed to delete withdrawal method');
+      }
   }
 }
 

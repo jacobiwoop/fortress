@@ -6,6 +6,7 @@ export const SiteSettings: React.FC = () => {
   const [name, setName] = useState(config.name);
   const [logoText, setLogoText] = useState(config.logoText);
   const [logoUrl, setLogoUrl] = useState<string | null>(config.logoUrl);
+  const [dashboardNotificationCount, setDashboardNotificationCount] = useState(config.dashboardNotificationCount || 3);
   const [file, setFile] = useState<File | null>(null);
   const [success, setSuccess] = useState(false);
   const [lang, setLang] = useState(store.getLanguage());
@@ -36,7 +37,7 @@ export const SiteSettings: React.FC = () => {
       }
     }
 
-    await store.updateConfig(name, logoText, currentLogoUrl);
+    await store.updateConfig(name, logoText, currentLogoUrl, dashboardNotificationCount);
     setConfig(store.getConfig());
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
@@ -83,6 +84,19 @@ export const SiteSettings: React.FC = () => {
                     className="text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-800 file:text-brand-yellow hover:file:bg-zinc-700"
                  />
              </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-400 mb-2">Dashboard Notification Count</label>
+            <input 
+              type="number" 
+              value={dashboardNotificationCount}
+              onChange={(e) => setDashboardNotificationCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 3)))}
+              min="1"
+              max="10"
+              className="w-24 bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-brand-yellow focus:outline-none"
+            />
+            <p className="text-xs text-zinc-500 mt-2">Number of recent notifications to show on user dashboard (1-10)</p>
           </div>
 
           <div className="pt-4 border-t border-zinc-800 flex items-center justify-between">

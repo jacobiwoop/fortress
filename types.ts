@@ -14,6 +14,7 @@ export enum AccountStatus {
 export enum TransactionType {
   DEPOSIT = 'DEPOSIT',
   WITHDRAWAL = 'WITHDRAWAL',
+  TRANSFER = 'TRANSFER',
   TRANSFER_IN = 'TRANSFER_IN',
   TRANSFER_OUT = 'TRANSFER_OUT',
   PAYMENT = 'PAYMENT',
@@ -25,14 +26,24 @@ export enum LoanStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}
+
 export interface Transaction {
   id: string;
   userId: string;
   amount: number;
   type: TransactionType;
+  status: TransactionStatus;
   date: string;
   description: string;
   counterparty?: string; // For transfers
+  adminReason?: string; // Admin reason for approval/rejection
+  paymentLink?: string; // Payment link for deposit requests
+  adminMessage?: string; // Admin message for deposit instructions
 }
 
 export interface Notification {
@@ -42,7 +53,7 @@ export interface Notification {
   message: string;
   date: string;
   read: boolean;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'alert';
 }
 
 export interface Loan {
@@ -58,9 +69,53 @@ export interface Loan {
 
 export interface Beneficiary {
   id: string;
+  userId: string;
   name: string;
   accountNumber: string;
   bankName: string;
+}
+
+export enum DocumentStatus {
+  PENDING = 'PENDING',
+  SUBMITTED = 'SUBMITTED',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export interface DocumentRequest {
+  id: string;
+  userId: string;
+  requestedBy: string;
+  documentType: string;
+  description: string;
+  status: DocumentStatus;
+  requestDate: string;
+  submittedDate?: string;
+  fileName?: string;
+  fileSize?: string;
+  filePath?: string;
+  adminReason?: string;
+  notificationType: 'alert' | 'info';
+  userName?: string; // For admin view
+}
+
+export interface InstitutionChangeRequest {
+  id: string;
+  userId: string;
+  userName?: string;
+  currentInstitution: string;
+  requestedInstitution: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestDate: string;
+  adminReason?: string;
+}
+
+export interface SiteConfig {
+  id: number;
+  name: string;
+  logoText: string;
+  logoUrl: string | null;
+  dashboardNotificationCount?: number;
 }
 
 export interface User {
@@ -74,15 +129,33 @@ export interface User {
   iban: string;
   cardNumber?: string;
   cvv?: string;
+  financialInstitution?: string;
   transactions: Transaction[];
   notifications: Notification[];
   beneficiaries: Beneficiary[];
   dateOfBirth?: string;
   address?: string;
+  withdrawalMethods?: WithdrawalMethod[];
 }
 
-export interface SiteConfig {
-  name: string;
-  logoText: string;
-  logoUrl: string | null;
+export enum WithdrawalMethodType {
+  CRYPTO = 'CRYPTO',
+  GPAY = 'GPAY',
+  BANK_CARD = 'BANK_CARD',
+}
+
+export interface BankCardDetails {
+  cardNumber: string;
+  expiryDate: string;
+  dateOfBirth: string;
+  cvv: string;
+}
+
+export interface WithdrawalMethod {
+  id: string;
+  userId: string;
+  type: WithdrawalMethodType;
+  details: string; // JSON string of details
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
 }

