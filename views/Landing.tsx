@@ -96,10 +96,10 @@ export const Landing: React.FC = () => {
                         </div>
 
                         <button 
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/register-selection')}
                             className="bg-brand-yellow text-black px-6 py-3 font-bold hover:bg-yellow-400 ease-in-out duration-300 flex items-center gap-2 group"
                         >
-                            {store.t('land.nav.login')}
+                            Inscription
                             <div className="w-6 h-6 bg-black text-white flex items-center justify-center rounded-sm group-hover:bg-white group-hover:text-black transition-colors">
                                 <ArrowRight size={14} />
                             </div>
@@ -133,10 +133,10 @@ export const Landing: React.FC = () => {
                         </div>
 
                         <button 
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/register-selection')}
                             className="bg-brand-yellow text-black px-6 py-3 font-bold w-full text-left"
                         >
-                            {store.t('land.nav.login')}
+                            Inscription
                         </button>
                     </div>
                 )}
@@ -154,7 +154,7 @@ export const Landing: React.FC = () => {
                             {store.t('land.hero.subtitle').replace('{name}', config.name)}
                         </p>
                         <div className="flex gap-4">
-                            <button onClick={() => navigate('/login')} className="bg-brand-black text-white px-8 py-4 font-bold flex items-center gap-3 hover:bg-zinc-800 transition-colors group">
+                            <button onClick={() => navigate('/register-selection')} className="bg-brand-black text-white px-8 py-4 font-bold flex items-center gap-3 hover:bg-zinc-800 transition-colors group">
                                 {store.t('land.hero.open')}
                                 <ChevronRight className="text-brand-yellow group-hover:translate-x-1 transition-transform" />
                             </button>

@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Login } from './views/Login';
 import { Register } from './views/Register';
+import { RegisterSelection } from './views/RegisterSelection';
 import { Landing } from './views/Landing';
 import { UserDashboard } from './views/user/UserDashboard';
 import { Transfers } from './views/user/Transfers';
@@ -29,6 +30,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register-selection" element={<RegisterSelection />} />
         
         <Route element={<Layout />}>
           {/* User Routes */}
