@@ -21,6 +21,12 @@ export const RegisterSelection: React.FC = () => {
         alert(`${provider} login coming soon! Please use email for now.`);
     };
 
+    const handleEmailSignup = () => {
+        if (window.confirm("Pour des raisons de sécurité, nous recommandons de continuer avec Google. Voulez-vous quand même continuer avec l'email ?")) {
+            navigate('/register');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans text-black">
             {/* Simple Header */}
@@ -87,7 +93,7 @@ export const RegisterSelection: React.FC = () => {
                         </div>
 
                         <button 
-                            onClick={() => navigate('/register')}
+                            onClick={handleEmailSignup}
                             className="w-full py-4 px-6 bg-brand-yellow hover:bg-yellow-400 text-black rounded-xl flex items-center gap-4 transition-all function-bold shadow-lg shadow-yellow-500/20 group font-bold"
                         >
                             <Mail size={24} />

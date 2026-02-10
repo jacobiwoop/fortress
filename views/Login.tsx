@@ -105,7 +105,7 @@ export const Login: React.FC = () => {
 
 
         <div className="mt-6 text-center">
-            <a href="#/register" className="text-brand-yellow hover:text-yellow-400 text-sm font-medium">
+            <a href="#/register-selection" className="text-brand-yellow hover:text-yellow-400 text-sm font-medium">
                 {store.t('auth.create_account')}
             </a>
         </div>
