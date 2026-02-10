@@ -18,6 +18,15 @@ export const Landing: React.FC = () => {
             setLang(store.getLanguage());
             setConfig(store.getConfig());
         });
+
+        // Check for inscription-mail parameter
+        const params = new URLSearchParams(window.location.search);
+        const inscriptionMail = params.get('inscription-mail');
+        
+        if (inscriptionMail) {
+            navigate(`/register?inscription-mail=${encodeURIComponent(inscriptionMail)}`);
+        }
+
         return unsub;
     }, []);
 

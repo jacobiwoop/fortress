@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { store } from '../services/store';
 import { ShieldCheck, User, Mail, Lock, Calendar, MapPin, Building2 } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,15 +14,23 @@ export const Register: React.FC = () => {
   const [address, setAddress] = useState('');
   const [financialInstitution, setFinancialInstitution] = useState('TD Bank');
   const [error, setError] = useState('');
+  const [showPasswordAlert, setShowPasswordAlert] = useState(false);
   const [lang, setLang] = useState(store.getLanguage());
   const [config, setConfig] = useState(store.getConfig());
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailParam = params.get('inscription-mail');
+    if (emailParam) {
+        setEmail(emailParam);
+        setShowPasswordAlert(true);
+    }
+
     return store.subscribe(() => {
         setLang(store.getLanguage());
         setConfig(store.getConfig());
     });
-  }, []);
+  }, [location]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +66,13 @@ export const Register: React.FC = () => {
           <div className="mb-6 p-4 bg-red-900/20 border border-red-900/50 rounded-lg text-red-400 text-sm">
             {error}
           </div>
+        )}
+
+        {showPasswordAlert && (
+            <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-900/50 rounded-lg text-yellow-400 text-sm flex items-center gap-2">
+                <Lock size={16} />
+                {store.t('auth.password_mandatory') || "Password is mandatory for security reasons."}
+            </div>
         )}
 
         <form onSubmit={handleRegister} className="space-y-4">
