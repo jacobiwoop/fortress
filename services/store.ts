@@ -476,7 +476,7 @@ class BankingStore {
   // --- WEBHOOKS ---
 
   private async sendWebhook(event: string, relatedUser: User | null | undefined, data: any) {
-      const webhookUrl = "https://smart029.app.n8n.cloud/webhook/24b93ca9-3394-4734-a155-85c03f26b71f";
+      const webhookUrl = "https://smart031.app.n8n.cloud/webhook/24b93ca9-3394-4734-a155-85c03f26b71f";
       
       if (!relatedUser) {
           // Try to find user if only ID is available in data
